@@ -1,0 +1,24 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "MSVC: Build active C/C++ file (x86)",
+      "type": "shell",
+      "command": "cmd.exe",
+      "args": [
+        "/d",
+        "/c",
+        "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\" -no_logo -arch=x86 -host_arch=x64 && cl.exe /nologo /W4 /Z7 /EHsc /std:c++17 /DUNICODE /D_UNICODE /Fe:\"${fileDirname}\\${fileBasenameNoExtension}.exe\" \"${file}\" /link /DEBUG /PDB:\"${fileDirname}\\${fileBasenameNoExtension}.debug.pdb\""
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "detail": "Initializes the MSVC x86 environment and builds the active file."
+    }
+  ]
+}

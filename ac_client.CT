@@ -205,7 +205,7 @@
     </CheatEntry>
     <CheatEntry>
       <ID>28</ID>
-      <Description>"Name with global?"</Description>
+      <Description>"BOT 1 NAME"</Description>
       <ShowAsSigned>0</ShowAsSigned>
       <VariableType>String</VariableType>
       <Length>10</Length>
@@ -231,6 +231,34 @@
     </CheatEntry>
     <CheatEntry>
       <ID>30</ID>
+      <Description>"BOT KIlls works global"</Description>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>4 Bytes</VariableType>
+      <Address>ac_client.exe+18AC04</Address>
+      <Offsets>
+        <Offset>0x1DC</Offset>
+        <Offset>4</Offset>
+      </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>33</ID>
+      <Description>"Weapon from playerent"</Description>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>String</VariableType>
+      <Length>10</Length>
+      <Unicode>0</Unicode>
+      <CodePage>0</CodePage>
+      <ZeroTerminate>1</ZeroTerminate>
+      <Address>ac_client.exe+18AC04</Address>
+      <Offsets>
+        <Offset>0</Offset>
+        <Offset>C</Offset>
+        <Offset>0x364</Offset>
+        <Offset>4</Offset>
+      </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>32</ID>
       <Description>"BOT 2 Name"</Description>
       <ShowAsSigned>0</ShowAsSigned>
       <VariableType>String</VariableType>
@@ -252,8 +280,50 @@
       <Address>ac_client.exe+18AC04</Address>
       <Offsets>
         <Offset>0xEC</Offset>
-        <Offset>4</Offset>
+        <Offset>8</Offset>
       </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>34</ID>
+      <Description>"No description"</Description>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>4 Bytes</VariableType>
+      <Address>0082120C-EC</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>35</ID>
+      <Description>"No description"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <VariableType>4 Bytes</VariableType>
+      <Address>ac_client.exe+17E0A8</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>36</ID>
+      <Description>"No description"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <VariableType>4 Bytes</VariableType>
+      <Address>ac_client.exe+17E254</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>37</ID>
+      <Description>"No description"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <VariableType>4 Bytes</VariableType>
+      <Address>ac_client.exe+17E360</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>38</ID>
+      <Description>"No description"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <VariableType>4 Bytes</VariableType>
+      <Address>ac_client.exe+18AC00</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>39</ID>
+      <Description>"No description"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <VariableType>4 Bytes</VariableType>
+      <Address>ac_client.exe+195404</Address>
     </CheatEntry>
   </CheatEntries>
   <UserdefinedSymbols/>
