@@ -2,7 +2,7 @@ https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L59
 https://github.com/assaultcube/AC/blob/13f0d8eea4822dee5c976661218d022be74342e3/source/src/server.h#L171
 https://gamehacking.academy/pages/1/02/#memory
 https://github.com/assaultcube/AC/blob/13f0d8eea4822dee5c976661218d022be74342e3/source/src/entity.h
-
+https://www.youtube.com/watch?v=TCu0qSivXUc
 
 # FOR REFERENCE
 
