@@ -3,6 +3,34 @@ first is physent because its the first to ever get inherited inthe player object
 
 So it goes like physent -> dyent -> playerent (since dyent gets inherited first and playerstate second.) so after counting the health we need to count the latter end of playerstate so now I need to figure out the inheritance for the weapon.
 
+
+
+calculating offsets
+
+```
+a type must start at an address that is a multiple of its own size
+
+bool  = 1 byte → can start anywhere
+char  = 1 byte → can start anywhere
+short = 2 bytes → must start at even address (divisible by 2)
+int   = 4 bytes → must start at address divisible by 4
+float = 4 bytes → must start at address divisible by 4
+```
+
+how to apply it step by step
+
+```
+1. start at offset 0
+2. place each field one by one
+3. before placing a field ask:
+   is my current offset divisible by this field's size?
+4. if yes → place it there
+5. if no → add padding bytes until it is, then place it
+6. add the field's size to get the new current offset
+7. repeat
+```
+
+
 ```cpp
 class physent
 // source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L105
@@ -319,106 +347,11 @@ class botent : public playerent
 
 
 
-now for the dyent
-
-
-```cpp
-class physent
-// https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L105
-{
-    // virtual ~physent() exists → vtable ptr injected at offset 0
-    // 0x000 (0) → 4 bytes
-
-    vec o, vel;
-    // ── NON-STANDARD SIZE — READ THIS ──
-    // vec is a custom struct defined in geom.h
-    // source: https://github.com/assaultcube/AC/blob/master/source/src/geom.h#L2
-    //   struct vec { float x, y, z; };  → 3 floats × 4 bytes = 12 bytes each
-    // 0x004 (4)  → o.x
-    // 0x008 (8)  → o.y
-    // 0x00C (12) → o.z
-    // 0x010 (16) → vel.x
-    // 0x014 (20) → vel.y
-    // 0x018 (24) → vel.z
-
-    vec deltapos, newpos;
-    // 0x01C (28) → deltapos.x
-    // 0x020 (32) → deltapos.y
-    // 0x024 (36) → deltapos.z
-    // 0x028 (40) → newpos.x
-    // 0x02C (44) → newpos.y
-    // 0x030 (48) → newpos.z
-
-    float yaw, pitch, roll;
-    // 0x034 (52) → yaw
-    // 0x038 (56) → pitch
-    // 0x03C (60) → roll
-
-    float pitchvel;
-    // 0x040 (64) → pitchvel
-
-    float maxspeed;
-    // 0x044 (68) → maxspeed
-
-    int timeinair;
-    // 0x048 (72) → timeinair
-
-    float radius, eyeheight, maxeyeheight, aboveeye;
-    // 0x04C (76) → radius
-    // 0x050 (80) → eyeheight
-    // 0x054 (84) → maxeyeheight
-    // 0x058 (88) → aboveeye
-
-    bool inwater;
-    // 0x05C (92) → inwater
-
-    bool onfloor, onladder, jumpnext, jumpd, crouching, crouchedinair, trycrouch, cancollide, stuck, scoping;
-    // 0x05D (93)  → onfloor
-    // 0x05E (94)  → onladder
-    // 0x05F (95)  → jumpnext
-    // 0x060 (96)  → jumpd
-    // 0x061 (97)  → crouching
-    // 0x062 (98)  → crouchedinair
-    // 0x063 (99)  → trycrouch
-    // 0x064 (100) → cancollide
-    // 0x065 (101) → stuck
-    // 0x066 (102) → scoping
-    // 0x067 (103) → [1 byte padding — 11 bools end at 103, next field int needs 4-byte align, 103 % 4 = 3 → 1 byte pad]
-
-    int lastjump;
-    // 0x068 (104) → lastjump
-
-    float lastjumpheight;
-    // 0x06C (108) → lastjumpheight
-
-    int lastsplash;
-    // 0x070 (112) → lastsplash
-
-    char move, strafe;
-    // 0x074 (116) → move
-    // 0x075 (117) → strafe
-
-    uchar state, type;
-    // 0x076 (118) → state  (CS_ALIVE=0 CS_DEAD=1)
-    // 0x077 (119) → type   (ENT_PLAYER=0 ENT_BOT=1)
-
-    float eyeheightvel;
-    // 0x078 (120) → eyeheightvel
-
-    int last_pos;
-    // 0x07C (124) → last_pos
-    // physent ends at 0x080 (128)
-};
-
-
-
-
-
 
 
 Now playerstate
 
-```
+```cpp
 class playerstate
 // source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h
 // starts at 0x0E8 (232) — right after dynent ends
@@ -444,7 +377,7 @@ public:
 
     int ammo[NUMGUNS], mag[NUMGUNS], gunwait[NUMGUNS];
     // NUMGUNS = 9, each array = 9 × 4 = 36 bytes
-    // 0x104 (260) → ammo[0]    GUN_KNIFE
+    // 0x104 (260) → ammo[0]    GUN_KNIFEac_client.exe+18AC00
     // 0x108 (264) → ammo[1]    GUN_PISTOL
     // 0x10C (268) → ammo[2]    GUN_CARBINE
     // 0x110 (272) → ammo[3]    GUN_SHOTGUN
@@ -569,3 +502,36 @@ struct weapon
     // everything after this is virtual functions → no data fields
 };
 ```
+
+Struct guninfo:
+
+
+```cpp
+char modelname[23]   → 0x00 (0)
+char title[42]       → 0x17 (23)
+[1 byte padding]     → 0x41 (65)  ← compiler inserts this for alignment
+short sound          → 0x42 (66)
+short reload         → 0x44 (68)
+short reloadtime     → 0x46 (70)
+short attackdelay    → 0x48 (72)
+short damage         → 0x4A (74)
+short piercing       → 0x4C (76)
+short projspeed      → 0x4E (78)
+short part           → 0x50 (80)
+short spread         → 0x52 (82)
+short recoil         → 0x54 (84)
+short magsize        → 0x56 (86)
+short mdl_kick_rot   → 0x58 (88)
+short mdl_kick_back  → 0x5A (90)
+short recoilincrease → 0x5C (92)
+short recoilbase     → 0x5E (94)  ← was wrong at 0x5D
+short maxrecoil      → 0x60 (96)
+short recoilbackfade → 0x62 (98)
+short pushfactor     → 0x64 (100)
+bool  isauto         → 0x66 (102)
+total = 102 bytes
+```
+
+
+
+

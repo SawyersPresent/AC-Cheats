@@ -1,4 +1,8 @@
 https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L59
+https://github.com/assaultcube/AC/blob/13f0d8eea4822dee5c976661218d022be74342e3/source/src/server.h#L171
+https://gamehacking.academy/pages/1/02/#memory
+https://github.com/assaultcube/AC/blob/13f0d8eea4822dee5c976661218d022be74342e3/source/src/entity.h
+
 
 # FOR REFERENCE
 
@@ -502,4 +506,6 @@ now we save this then we close the game and boot it back up to see if its actual
 `ac_client.exe+18AC00` , now to test this we just take this address then we make it a pointer,  we add a offset so the offset we actually know. 
 
 so it starts with the following, find the value, use the value to find its offset, use the offset to find its base address, use base address to find static global pointer
+
+for the weapons it makes sense to me now, saif remeber to ducment this bullshit after studying for the GRE tomorrow and going to gradmas, its litearlly just playerstat -> weaponsel* (which is a object created from weapon) ->weapon -> guninfo(which is an array that contains the information we want)
 
