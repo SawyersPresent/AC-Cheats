@@ -388,6 +388,18 @@
             <Offset>0x11C</Offset>
           </Offsets>
         </CheatEntry>
+        <CheatEntry>
+          <ID>52</ID>
+          <Description>"Weapon from playerent"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>2 Bytes</VariableType>
+          <Address>ac_client.exe+18AC00</Address>
+          <Offsets>
+            <Offset>0x64</Offset>
+            <Offset>C</Offset>
+            <Offset>0x364</Offset>
+          </Offsets>
+        </CheatEntry>
       </CheatEntries>
     </CheatEntry>
     <CheatEntry>
@@ -405,7 +417,7 @@
           <Description>"BOT 1 NAME"</Description>
           <ShowAsSigned>0</ShowAsSigned>
           <VariableType>String</VariableType>
-          <Length>10</Length>
+          <Length>12</Length>
           <Unicode>0</Unicode>
           <CodePage>0</CodePage>
           <ZeroTerminate>1</ZeroTerminate>
