@@ -15,16 +15,12 @@
 #define BOT 0x4
 #define Name 0x205
 #define Health 0xEC
+#define PROCESS_NAME "ac_client.exe"
 
-int main()
-{
+
+DWORD GetPID(char *processName){
     PROCESSENTRY32 pe32; // here we define the normal process structure so were able to interact with PE's
     pe32.dwSize = sizeof(pe32); // then apparently its necessary to set the p32.dwsize even though its never used? 
-
-    MODULEENTRY32 me32; // now we do the moduels so we can do deepre module enumeration
-    me32.dwSize = sizeof(me32);
-
-
 
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0); // we open up handles to  be able to take the snapshots necessary
     if (snapshot == INVALID_HANDLE_VALUE){ // add a failure check
@@ -34,14 +30,14 @@ int main()
         BOOL Processresult = Process32First(snapshot, &pe32); // now we use process32first to actually be able to parse the result of the snapshot, it takes the handle to
         
         while ( Processresult == TRUE ){ // while loop is actually baller because initially it was all if statments but ik the return values now so we chilling
-                if (strcmp("ac_client.exe", pe32.szExeFile) == 0)
+                if (strcmp(processName, pe32.szExeFile) == 0)
                 {
                     printf("We have AC_Client\n");
                     printf("======================== \n");
                     printf("Name: %s \n", pe32.szExeFile);
                     printf("PID: %lu \n", pe32.th32ProcessID);
                     printf("PPID: %lu \n", pe32.th32ParentProcessID);
-                    printf("Module Base %lu \n", pe32.th32ModuleID);
+                    return pe32.th32ProcessID;
                     break;
                 };
 
@@ -69,20 +65,17 @@ int main()
             printf("Error code: %lu\n", (unsigned long)dw);
         };
 
-        // now for the memory
+    return -1;
+    
+};
 
-        char mybuffer[MY_BUFFER_SIZE];
+DWORD GetBase(){
+        DWORD Func1 = GetPID("ac_client.exe");
 
-        BOOL rMemory = ReadProcessMemory(ac_handle, (LPCVOID)0x007C4BF5, mybuffer, sizeof(mybuffer), NULL); // IT WORKEDD, this is atleast hardcoded we want offset
-        
-        if (rMemory != 0){
-            printf("le success \n");
-            printf("Here is the data in that offset %s \n" , mybuffer);
-        }
+        MODULEENTRY32 me32; // now we do the moduels so we can do deepre module enumeration
+        me32.dwSize = sizeof(me32);
 
-        // now to read the module base
-        
-        HANDLE ModuleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pe32.th32ProcessID); // we open up handles to  be able to take the snapshots necessary
+        HANDLE ModuleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, Func1); // we open up handles to  be able to take the snapshots necessary
 
         BOOL ModuleEnum = Module32First(ModuleSnapshot, &me32);
         if(ModuleEnum == TRUE){
@@ -91,26 +84,41 @@ int main()
             printf("it failed \n");
         };
 
+                char mybuffer[MY_BUFFER_SIZE];
+
+        
+        HANDLE ac_handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, Func1);
+
+        // now to read the module base
         DWORD OurPlayerBase = 0;
 
         ReadProcessMemory(ac_handle, me32.modBaseAddr+0x18AC00, &OurPlayerBase, sizeof(DWORD), NULL); // PlayerBase to be stored in DWORD
-        
-        char newbuffer[MY_BUFFER_SIZE];
+    
+    
+    return OurPlayerBase;
+}
 
-        ReadProcessMemory(ac_handle, 
-        (LPCVOID)(OurPlayerBase+Name), // this is imporatnt, first we want to add the base and the name together and then use LPCVOID (a pointer to somewhere with no specified type)
-        newbuffer, 
-        sizeof(newbuffer), 
+void PlayerNameFunction(char *buffer, int bufferSize){
+        DWORD kys = GetPID("ac_client.exe");
+        DWORD Base = GetBase();
+        HANDLE ac_handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, kys); 
+        char PlayerNameFromBase = ReadProcessMemory(ac_handle, (LPCVOID)(Base+Name), // this is important, first we want to add the base and the name together and then use LPCVOID (a pointer to somewhere with no specified type)
+        buffer, 
+        bufferSize, 
         NULL); // finally able to actually use said playerbase and offsets. Nothing hardcoded
+};
 
 
-        printf("Here this is ment to be our name... I hope it works... with the playerbase, module reading and etc. %s \n", newbuffer);
+int main()
+{
+    
 
-
-
-
-
-
+    // erm...
+    DWORD pid = GetPID("ac_client.exe");
+    printf("PID of ac_client %lu \n", pid);
+    char name[24];    
+    PlayerNameFunction(name, 24);
+    printf("now what were going to do is the module retardation heres the name please work %s \n", name);
 
     return 0;
     
