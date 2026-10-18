@@ -17,8 +17,12 @@ int main()
     BOOL Processresult = Process32First(snapshot, &pe32); // now we use process32first to actually be able to parse the result of the snapshot, it takes the handle to
         while ( Processresult == TRUE ){ // while loop is actually baller because initially it was all if statments but ik the return values now so we chilling
                 printf("it worked! \n");
-                printf("name: %s \n",pe32.szExeFile); // so after getting the handle to what we want, then we would use the pointer to the process structure
-                printf("PID: %lu \n",pe32.th32ProcessID); // it worked, it needs the right return % 
+
+                if (strcmp("ac_client.exe",pe32.szExeFile)){
+                    printf("We foundd ittt\n");
+                    break;
+                    
+                };
 
             BOOL NextProcess = Process32Next(snapshot, &pe32);                
             Processresult = NextProcess;
