@@ -26,7 +26,7 @@ int main()
 
 
 
-    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL); // we open up handles to  be able to take the snapshots necessary
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0); // we open up handles to  be able to take the snapshots necessary
     if (snapshot == INVALID_HANDLE_VALUE){ // add a failure check
         printf("it failed");
     }
@@ -60,7 +60,7 @@ int main()
         // the openprocess API now
         HANDLE ac_handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
 
-        if (!ac_handle == NULL){
+        if (ac_handle != NULL){
             printf("Now were using OpenProcess \n");
             
         }else{
@@ -86,7 +86,7 @@ int main()
 
         BOOL ModuleEnum = Module32First(ModuleSnapshot, &me32);
         if(ModuleEnum == TRUE){
-            printf("here is the module base %lu \n", me32.modBaseAddr); 
+            printf("here is the module base %p \n", me32.modBaseAddr); 
         }else{
             printf("it failed \n");
         };
