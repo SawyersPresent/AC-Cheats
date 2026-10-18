@@ -15,28 +15,22 @@ int main()
     }
 
     BOOL Processresult = Process32First(snapshot, &pe32); // now we use process32first to actually be able to parse the result of the snapshot, it takes the handle to
-        while ( Processresult == TRUE ){
-            if(Processresult == TRUE ){ // snapshots and then it takes the pointer to the pe32 struct, so it can know how to interpret the data inside the handle? i assume?
+        while ( Processresult == TRUE ){ // while loop is actually baller because initially it was all if statments but ik the return values now so we chilling
                 printf("it worked! \n");
-                printf("Here goes the name %s \n",pe32.szExeFile); // so after getting the handle to what we want, then we would use the pointer to the process structure
-                printf("Here goes the PID %lu \n",pe32.th32ProcessID); // it worked, it needs the right return % 
-            }
-            else if (Processresult == FALSE )
+                printf("name: %s \n",pe32.szExeFile); // so after getting the handle to what we want, then we would use the pointer to the process structure
+                printf("PID: %lu \n",pe32.th32ProcessID); // it worked, it needs the right return % 
+
+            BOOL NextProcess = Process32Next(snapshot, &pe32);                
+            Processresult = NextProcess;
+            if (Processresult == FALSE )
             {
-                printf("not copied");
+                printf("not copied \n");
                 if(GetLastError() == ERROR_NO_MORE_FILES){
-                    printf("no processes exist or the snapshot does not contain process information");
+                    printf("no processes exist or the snapshot does not contain process information \n");
                 }
             };
 
-            BOOL NextProcess = Process32Next(snapshot, &pe32);
-            
-            if(NextProcess == TRUE){
-                printf("Reading the next process worked! \n");
-                printf("Here goes the name %s \n",pe32.szExeFile);
-                printf("Here goes the PID %lu \n",pe32.th32ProcessID);
 
-            };
     }
 
     return 0;
