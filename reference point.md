@@ -5,6 +5,43 @@ So it goes like physent -> dyent -> playerent (since dyent gets inherited first 
 
 
 
+why pointers and addresses are always hex
+
+   every address you see in CE, disassemblers, memory view → hex.
+   hex digits are 0-9 and A-F. if you see letters in an address that's why.
+   0x prefix just makes it explicit. 0x1F5A19B4 and 1F5A19B4 are the same thing.
+
+   when doing math on addresses always use Calculator in Programmer mode with HEX selected.
+   decimal will reject the letters and give you garbage.
+
+   subtracting an offset from an address:
+      health_address - 0xEC = object base
+      you're asking "health is 236 bytes forward from the start, so where is the start?"
+      going backwards by the offset lands you at offset 0 = the object base.
+
+
+why subtracting 0xEC from health gives you the object base and not something weird
+
+   the inheritance chain stacks in memory like this:
+      offset 0:   physent block     ← object base (this is what you want)
+      offset 128: dynent block
+      offset 232: playerstate block ← health lives in here at +4 from playerstate start
+      offset 440: playerent own fields
+
+   physent is always first because it's the root parent. every class that inherits
+   from physent starts with the physent block at offset 0. so the object base of any
+   playerent, botent, dynent IS the start of the physent block.
+
+   health is at 0xEC (236) from that base. subtract that from any health address
+   and you always land at offset 0 = the object base = the physent vtable pointer.
+
+   this is why the same subtraction works for players AND bots. same inheritance
+   chain, same layout, same offsets. just different object base addresses.
+
+
+
+
+
 calculating offsets
 
 ```

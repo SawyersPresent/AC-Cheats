@@ -1,49 +1,17 @@
-# AssaultCube Struct Reference
-# source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h
+# From mumpsimus to a greenhorn
 
 
-# ═══════════════════════════════════════════════════════
-# OFFSET CALCULATION RULES — READ THIS FIRST
-# ═══════════════════════════════════════════════════════
+## Introduction
 
-a type must start at an address that is a multiple of its own size
+I got into this from a dear friend of mine, Ive always wanted to get into VR, Game hacking and just anything related to reverse engineering. Initially when I first started cyber security, I despised the idea of reversing, writing in C or anything related to pwn, I would turn into a cannon shooting straight projectile vommit onto my keyboard.
 
-```
-bool  = 1 byte → can start anywhere
-char  = 1 byte → can start anywhere
-short = 2 bytes → must start at even address (divisible by 2)
-int   = 4 bytes → must start at address divisible by 4
-float = 4 bytes → must start at address divisible by 4
-```
+Now after much reflection (and some therapy) I have come to realise that I got into this field to love breaking stuff and exploration, now this is me finally doing msyelf justice to just fuck around and find out. 
 
-how to apply it step by step
 
-```
-1. start at offset 0
-2. place each field one by one
-3. before placing a field ask:
-   is my current offset divisible by this field's size?
-4. if yes → place it there
-5. if no → add padding bytes until it is, then place it
-6. add the field's size to get the new current offset
-7. repeat
-```
+### Disclaimer: Reference sheet.
+This is a 32-Bit program, so the way we calculate these bytes and do the math bullshit will be different from a normal 64-Bit program. Attached following is a reference sheet for the assembly, byte sizes, 
 
-quick padding formula
-
-```
-current_offset % field_size == 0  →  no padding needed, place it here
-current_offset % field_size != 0  →  add (field_size - remainder) bytes of padding
-
-example:
-   offset 103, next field is int (4 bytes)
-   103 % 4 = 3  →  need (4 - 3) = 1 byte padding
-   int goes at 104
-```
-
-type sizes reference
-
-```
+```cpp
 C++ type        bytes    CE type       notes
 ─────────────────────────────────────────────────────
 bool            1        Byte          0=false 1=true
@@ -60,328 +28,418 @@ vec[N]          12×N     N× Float
 int[N]          4×N      N× 4 Bytes
 bool[N]         1×N      N× Byte       pack together no padding
 animstate       20       (unknown internals)
-string          260      String        typedef char[MAXSTRLEN] — NOT 16 bytes
-                                       see NON-STANDARD note under playerent name field
+string/char[]   1×N      String        name = 16 bytes
 ─────────────────────────────────────────────────────
-```
-
-vtable ptr rule
-
-```
-any class with virtual keyword → 4 bytes injected at offset 0
-one ptr per class regardless of how many virtual functions
-no virtual keyword anywhere → no vtable ptr, first field is at offset 0
-```
-
-inheritance rule
-
-```
-parent fields ALWAYS come first in memory
-child fields are appended after
-left-to-right order for multiple inheritance
-
-playerent : public dynent, public playerstate
-→ dynent (includes physent) first
-→ playerstate second
-→ playerent own fields last
-
-the chain:
-physent → dynent → playerstate → playerent → botent
-offset 0 → 128  → 232        → 440       → 1032
-```
-
-non-standard type rule
-
-```
-before assigning a size to ANY non-primitive type
-ctrl+F for typedef, struct, class, #define to find actual definition
-never assume. the string mistake cost 244 bytes on every field after name.
-
-lesson learned: string name was assumed to be 16 bytes
-actual definition in tools.h: typedef char string[260]
-everything after name was shifted by 244 bytes until CE confirmed it
+padding rule:
+  after bools before int/float → pad to next multiple of 4
+  103 % 4 = 3 → 1 byte padding
+  257 % 4 = 1 → 3 bytes padding
+  533 % 4 = 1 → 3 bytes padding
+─────────────────────────────────────────────────────
+vtable ptr rule:
+  any class with virtual keyword → 4 bytes at offset 0
+  one ptr per class regardless of how many virtual functions
+─────────────────────────────────────────────────────
+inheritance rule:
+  inherited block ALWAYS comes before own fields
+  left-to-right order for multiple inheritance
+  playerent : public dynent, public playerstate
+  → dynent (includes physent) first
+  → playerstate second
+  → playerent own fields last
 ```
 
 
-# ═══════════════════════════════════════════════════════
-# PHYSENT — offset 0x000, size 128 bytes
-# source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L105
-# this is ALWAYS offset 0. the object base. root of everything.
-# ═══════════════════════════════════════════════════════
+## Now the show begins
+
+Now the full workflow from zero to hero.
+
+
+1. scan for a known value (health = 100)
+2. damage/heal to narrow down to one address → confirmed field address
+3. subtract field offset from address → object base (changes every session)
+4. verify base by checking other known offsets
+5. scan for base address as 4 bytes hex
+6. look for ac_client.exe+ result → static pointer (never changes)
+7. OR trace backwards through assembly from field access to find static pointer
+8. save as pointer chain in cheat table:
+      ac_client.exe+XXXXXX → pointer → +offset → field value
+9. verify survives game restart → done
+
+for other players/bots:
+   same process but the static pointer leads to an array
+   array[0] = null, array[1] = first entity base, array[2] = second, etc.
+   count stored separately at another static address
+
+terminology: three things people call "base" that are NOT the same
+
+```
+   field address (or raw address)
+      the actual memory address where a specific value lives right now
+      example: 27136B7C  ← where health bytes are stored this session
+      changes every session, useless to save on its own
+
+   object base (or entity base, or instance base)
+      the start of the playerent/botent object in heap memory
+      offset 0 of the entire inheritance block = start of physent vtable ptr
+      example: 27136A90  ← this session's player object start
+      changes every session, but all offsets are measured from here
+      how you get it: field address - field offset (27136B7C - 0xEC = 27136A90)
+
+   static pointer (or base pointer, or global pointer)
+      the address inside ac_client.exe that HOLDS the object base
+      lives in the executable's data section, never changes between sessions
+      example: ac_client.exe+17BA60  ← always contains current object base
+      how you get it: scan for object base as 4 bytes hex, find the ac_client.exe+ result
+
+the chain written out with correct terminology:
+
+   static pointer          object base        field address    value
+   ac_client.exe+17BA60 → 27136A90        →  27136B7C      →  100
+   (never changes)         (heap, changes)    (heap, changes)  (health)
+
+in CE:
+   when you add an address manually with pointer ticked:
+      address box = static pointer    ← ac_client.exe+17BA60
+      offset box  = field offset      ← EC
+      CE reads: static pointer → object base → object base + EC → value
+
+   when CE's struct dissect shows offsets:
+      those are distances from the object base
+      not from the static pointer
+      not from the field address
+```
+
+So how do we start this, what do we do? and why?, We want to be able to read our own attributes to be able to locate ourself, based on this we could infer what the other objects like other players, weapons, etc. would look like. 
+
+to usually find our own player object what we can / need to do would be to have our health and damage ourselves and then find it as the value decreases and see what keeps changing, and then we have the health and etc. 
+
+interms of finding ourselves and the entire struct, remember that the tool for creating data structuers cheat engine guesses it so it could or could not be accurate, this is  a psosibility, some attributes just get missed completely or they assume theyre 4 bytes instead of 1 and etc. etc.
+
+
+## Getting lost
+
+
+## Post finding dynamic address for health
+
+then I set up a breakpoint on the instruction to find 
+
+```
+ac_client.exe+61628 - FF B7 EC000000        - push [edi+000000EC]
+```
+so were pushing the edi register with the offset EC (in this case we already know EC is health offset) if we dont know we can infer it based on the behaviour of what were debugging in the game and the instrution, for example if were debugging the health and we see a comapre assembly thats comparing a register to null which means its the game checking if we are dead or not.
+
+example:
+
+```
+ac_client.exe+7D1A8 - 83 BE EC000000 00     - cmp dword ptr [esi+000000EC],00 { 0 }
+```
+
+so based on that address if we set a breakpoint on that assembly and trigger this behaviour  then we can find the value 
+
+![alt text](image-5.png)
+
+so we found the base which is `00821120` so if we want to tst this we saw with the initial assembly instruction that it was this base address + the offset EC.
+
+We test this by doing now `00821120+0xEC` and then now from this  we can see if this actually is the same numbre as our health or not.
+
+
+So now to recover everything we take the base address `00821120` and we search for this hex value
+
+
+![alt text](image-6.png)
+
+now we save this then we close the game and boot it back up to see if its actually reliable or not. in this case the one that was the most reliable and booted up first was 
+`ac_client.exe+18AC00` , now to test this we just take this address then we make it a pointer,  we add a offset so the offset we actually know. 
+
+so it starts with the following, find the value, use the value to find its offset, use the offset to find its base address, use base address to find static global pointer
+
+for the weapons it makes sense to me now, its litearlly just playerstat -> weaponsel* (which is a object created from weapon) ->weapon -> guninfo(which is an array that contains the information we want)
+
+Now with all of this information we can essentially get to cooking. we have the methodology set, we have the health, gun values, xyz coordinates too!. Now whenever we need to find other objects related to the characters we should be able to 
+
+
+## Our player object
+
+https://github.com/assaultcube/AC/blob/master/source/src/clientgame.cpp#L24
+
+```
+playerent *player1 = newplayerent();          // our client
+vector<playerent *> players;                  // other clients
+```
+
+here this shows that OUR player (client comments) is created as a seperate objects from all of the OTHER player entities and not stored with them
+
+
+## Time to work.
+
+So now we have the ability to finally be able to fucking validate small dynamic / initial base addresses using these offsites.
+
+verification checklist: always do this when you find a new base
+
+found an address? subtract the offset to get base, then verify (specific to this game in this case):
+
+- base + 0xEC  → should show health value
+- base + 0x077 → should show 0 (player) or 1 (bot)
+- base + 0x205 → should show name as string in memory view
+- base + 0x004 → should show X position (Float, changes as entity moves)
+
+if all four check out → base confirmed.
+
+CE struct guesser is a starting point only. it guesses types wrong constantly.
+always cross reference against source code. the source is the ground truth.
+
+
+memory regions: why this matters
+
+three regions:
+- static (ac_client.exe+offset) → global vars, never moves, same every run
+- heap → where new/malloc puts objects, randomized every session (ASLR)
+- stack → function calls, local vars, changes constantly
+
+Regarding the heap specifically for the entity list in this case its held up in the heap. So we cant really walk it up or down, its all in different areas. furthremore here is an image example:
+
+excalidraw
+
+playerent objects live on the heap which is why the base address changes every session.
+global variables like g_player and g_other_players live in the static region which is
+why ac_client.exe+offset never changes. the static pointer is the anchor into the heap.
+
+
+why you CANT just save the object base directly
+
+```
+   every time the game starts, new/malloc gives the playerent object
+   a different heap address. ASLR randomizes where heap memory lands.
+
+   session 1:  player object base = 0x00939E40
+   session 2:  player object base = 0x27136A90
+   session 3:  player object base = 0x04F2A100
+
+   the offsets never change because they come from source code.
+   the object base changes every session because it lives on the heap.
+   this is why you need the static pointer chain:
+
+      static pointer        ← lives in executable, same every run
+          ↓ read it
+      object base           ← different every run, lives on heap
+          ↓ + offset
+      field value           ← health, name, position, etc.
+
+   CE follows this chain automatically when you tick the pointer checkbox.
+```
+
+
+this is how we found ourselves but now we need to find the bot
 
 ```cpp
-class physent
+class CBot;
+
+class botent : public playerent  // its inheriting from playernt, its GG for the bot lil vro
 {
 public:
-    // virtual ~physent() exists → vtable ptr injected at offset 0
-    // 0x000 (0) → vtable ptr (4 bytes)
+    // Added by Rick
+    CBot *pBot; // Only used if this is a bot, points to the bot class if we are the host,
+                // for other clients its NULL
+    // End add by Rick
 
-    vec o, vel;
-    // ── NON-STANDARD SIZE — READ THIS ──
-    // vec = struct { float x, y, z } = 3 × 4 = 12 bytes
-    // source: https://github.com/assaultcube/AC/blob/master/source/src/geom.h#L2
-    // 0x004 (4)  → o.x    (float) origin X position
-    // 0x008 (8)  → o.y    (float) origin Y position
-    // 0x00C (12) → o.z    (float) origin Z position
-    // 0x010 (16) → vel.x  (float) velocity X
-    // 0x014 (20) → vel.y  (float) velocity Y
-    // 0x018 (24) → vel.z  (float) velocity Z
+    playerent *enemy;                      // monster wants to kill this entity
+    // Added by Rick: targetpitch
+    float targetpitch;                    // monster wants to look in this direction
+    // End add
+    float targetyaw;                    // monster wants to look in this direction
 
-    vec deltapos, newpos;
-    // movement interpolation
-    // 0x01C (28) → deltapos.x
-    // 0x020 (32) → deltapos.y
-    // 0x024 (36) → deltapos.z
-    // 0x028 (40) → newpos.x
-    // 0x02C (44) → newpos.y
-    // 0x030 (48) → newpos.z
+    botent() : pBot(NULL), enemy(NULL) { type = ENT_BOT; }
+    ~botent() { }
 
-    float yaw, pitch, roll;
-    // 0x034 (52) → yaw
-    // 0x038 (56) → pitch
-    // 0x03C (60) → roll
-
-    float pitchvel;
-    // 0x040 (64) → pitchvel
-
-    float maxspeed;
-    // 0x044 (68) → maxspeed
-
-    int timeinair;
-    // 0x048 (72) → timeinair — used for fake gravity
-
-    float radius, eyeheight, maxeyeheight, aboveeye;
-    // bounding box size
-    // 0x04C (76) → radius
-    // 0x050 (80) → eyeheight
-    // 0x054 (84) → maxeyeheight
-    // 0x058 (88) → aboveeye
-
-    bool inwater;
-    // 0x05C (92) → inwater
-
-    bool onfloor, onladder, jumpnext, jumpd, crouching, crouchedinair, trycrouch, cancollide, stuck, scoping;
-    // 10 bools, 1 byte each, pack together with no padding between them
-    // 0x05D (93)  → onfloor
-    // 0x05E (94)  → onladder
-    // 0x05F (95)  → jumpnext
-    // 0x060 (96)  → jumpd
-    // 0x061 (97)  → crouching
-    // 0x062 (98)  → crouchedinair
-    // 0x063 (99)  → trycrouch
-    // 0x064 (100) → cancollide
-    // 0x065 (101) → stuck
-    // 0x066 (102) → scoping
-    // 0x067 (103) → [1 byte padding — 11 bools end at 103, next field int
-    //                needs 4-byte align, 103 % 4 = 3 → 1 byte pad]
-
-    int lastjump;
-    // 0x068 (104) → lastjump
-
-    float lastjumpheight;
-    // 0x06C (108) → lastjumpheight — defaults to 200 in constructor
-
-    int lastsplash;
-    // 0x070 (112) → lastsplash
-
-    char move, strafe;
-    // 0x074 (116) → move    — -1, 0, or 1
-    // 0x075 (117) → strafe  — -1, 0, or 1
-
-    uchar state, type;
-    // 0x076 (118) → state  — CS_ALIVE=0 CS_DEAD=1 CS_SPAWNING=2 etc
-    // 0x077 (119) → type   — ENT_PLAYER=0 ENT_BOT=1 ENT_CAMERA=2
-
-    float eyeheightvel;
-    // 0x078 (120) → eyeheightvel
-
-    int last_pos;
-    // 0x07C (124) → last_pos
-    // physent ends at 0x080 (128)
-
-    // constructor defaults (useful for knowing expected values):
-    //   yaw=270, pitch=0, roll=0, pitchvel=0
-    //   cancollide=true, stuck=false, scoping=false
-    //   lastjump=0, lastjumpheight=200, lastsplash=0
-    //   state=CS_ALIVE, last_pos=0
-
-    // virtual functions (no data fields):
-    //   virtual ~physent()
-    //   virtual void oncollision()
-    //   virtual void onmoved(const vec &dist)
+    int deaths() { return lifesequence; }
 };
+#endif //#ifndef STANDALONE
+```
+
+so what we can do is find a object that points to the class but... how can I find that class? another thing would be to do the same thing that we did for ourselves where we continiously damage the bot
+
+i did it and founnd the address oif that specific bots health it was 
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable>
+  <CheatEntries>
+    <CheatEntry>
+      <ID>18</ID>
+      <Description>"CONFIRMED BOT HEALTH"</Description>
+      <LastState Value="100" RealAddress="1F5A19B4"/>
+      <VariableType>4 Bytes</VariableType>
+      <Address>1F5A19B4</Address>
+    </CheatEntry>
+  </CheatEntries>
+</CheatTable>
+```
+
+so that minus 0xEC = `1F5A18C8` now to verify it I add offsets to this address to try and vverify it.
+
+```
+1F5A18C8 + 0xEC  = 1F5A19B4  → should show bot health (whatever you shot it to)
+1F5A18C8 + 0x077 = 1F5A193F  → should show 1 (ENT_BOT)
+1F5A18C8 + 0x205 = 1F5A1ACD  → should show bot name as string
+```
+
+![alt text](image-1.png)
+
+![alt text](image.png)
+
+it works!
+
+
+strings in C are known as C style string, they end in 00 which is a null byte so we can infer its a string.
+
+![alt text](image-2.png)
+
+so for that assembly it basically
+
+
+the thing about pointers in C these 2 lines are equivelant (the last two). 
+
+```c
+SOMETHING* X = my_array[INDEX];
+and
+something* x = *(my_array+index);
+```
+
+theyre the same fucking thing. the *4 is implicit in C, its just the data type. when you add a number to the pointer in C it gets multiplied by the size of the datatype its pointed to.
+
+arrays values are stored on the heap, allows us to allocate memory at runtime, thereforce due to ASLR it becomes randomized and we dont know where its going to be. its really good because global_entities kind of have to be present because think of the use function of a game.
+
+this was the right one?
+
+```
+ac_client.exe+81AE0 - 8B 1D 04AC5800        - mov ebx,[ac_client.exe+18AC04] { (234908E8) }
 ```
 
 
-# ═══════════════════════════════════════════════════════
-# DYNENT — own fields start 0x080, size 232 bytes total
-# source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L156
-# inherits physent. physent block sits above starting at offset 0.
-# ═══════════════════════════════════════════════════════
+okay so now that we have this finally. 
 
-```cpp
-class dynent : public physent
-{
-    bool k_left, k_right, k_up, k_down;
-    // 0x080 (128) → k_left
-    // 0x081 (129) → k_right
-    // 0x082 (130) → k_up
-    // 0x083 (131) → k_down
 
-    animstate prev[2], current[2];
-    // ── NON-STANDARD SIZE — READ THIS ──
-    // animstate is a custom struct — internals unknown from headers alone
-    // size confirmed empirically as 20 bytes per instance
-    // 4 instances total = 80 bytes
-    // 0x084 (132) → prev[0]    20 bytes
-    // 0x098 (152) → prev[1]    20 bytes
-    // 0x0AC (172) → current[0] 20 bytes
-    // 0x0C0 (192) → current[1] 20 bytes
+![alt text](image-3.png)
 
-    int lastanimswitchtime[2];
-    // 0x0D4 (212) → lastanimswitchtime[0]
-    // 0x0D8 (216) → lastanimswitchtime[1]
 
-    void *lastmodel[2];
-    // void* = generic pointer, 4 bytes each in 32-bit
-    // 0x0DC (220) → lastmodel[0]
-    // 0x0E0 (224) → lastmodel[1]
+so now when we add the initial offset being 4 (the order matters its bottom first and up last.) and when I change that 4 offset I change things within that list. the second newest offset is 205 which is the offset for the name. we have the entity list finally at last.
 
-    int lastrendered;
-    // 0x0E4 (228) → lastrendered
-    // dynent ends at 0x0E8 (232)
 
-    // virtual functions (no data fields):
-    //   virtual ~dynent()
-};
+assembly reading methodology: how to figure out unknown addresses
+
+```
+1. find a field you know (health, name, position)
+2. "find what accesses this address" in CE
+3. look at the instruction → [register + offset] tells you the offset from base
+4. ask: what loaded that register? scroll up in disassembler
+5. keep asking "where did this come from" until you hit [ac_client.exe+XXXXXX]
+6. that static address = global variable = your permanent pointer
+
+the pattern is always:
+   mov reg, [ac_client.exe+XXXXXX]   ← load global (static, never changes)
+   mov reg, [reg+esi*4]              ← index into array (heap, changes every session)
+   mov reg, [reg+offset]             ← read field from object
+
+recognizing these three patterns lets you reverse any game.
 ```
 
+reading assembly cold, how to not get lost
 
-# ═══════════════════════════════════════════════════════
-# PLAYERSTATE — own fields start 0x0E8, size 440 bytes total
-# source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h
-# inherits nothing. sits after dynent in playerent's memory layout.
-# contains per-player stats — ammo, health, gun selection.
-# ═══════════════════════════════════════════════════════
+```
+   when you open disassembly and don't know what anything means, ask these
+   questions in order:
 
-```cpp
-class playerstate
-{
-public:
-    // virtual ~playerstate() exists → own vtable ptr
-    // 0x0E8 (232) → vtable ptr (4 bytes)
+   1. what does this instruction DO?
+      mov  = copy a value
+      cmp  = compare two values (sets flags, doesn't store)
+      jmp/je/jng = jump somewhere based on flags
+      push = save to stack
+      sub  = subtract
+      add  = add
+      test = AND two values, check if result is zero
 
-    int health, armour;
-    // 0x0EC (236) → health  ← CE CONFIRMED — subtract from field address to get base
-    // 0x0F0 (240) → armour
+   2. are there brackets?
+      [register]         = go to that address and read what's there (dereference)
+      [register+offset]  = go to address+offset and read (struct field access)
+      [register+reg*4]   = go to address+(reg×4) and read (array index)
+      no brackets        = use the value directly, don't dereference
 
-    int primary, nextprimary;
-    // 0x0F4 (244) → primary      GUN_ASSAULT default
-    // 0x0F8 (248) → nextprimary
+   3. what region is the value in?
+      0x004xxxxx to 0x006xxxxx = inside ac_client.exe = static = global variable
+      0x001xxxxx = stack = temporary, ignore
+      everything else = heap = dynamic object
 
-    int gunselect;
-    // 0x0FC (252) → gunselect — which gun is currently selected (index 0-8)
-
-    bool akimbo;
-    // 0x100 (256) → akimbo
-    // 0x101 (257) → [3 bytes padding — 257 % 4 = 1 → pad to 260]
-
-    int ammo[NUMGUNS], mag[NUMGUNS], gunwait[NUMGUNS];
-    // NUMGUNS = 9, each array = 9 × 4 = 36 bytes
-    // ammo = total reserve ammo per gun
-    // mag  = ammo currently in the magazine
-    // gunwait = cooldown timer per gun
-    //
-    // 0x104 (260) → ammo[0]    GUN_KNIFE
-    // 0x108 (264) → ammo[1]    GUN_PISTOL
-    // 0x10C (268) → ammo[2]    GUN_CARBINE
-    // 0x110 (272) → ammo[3]    GUN_SHOTGUN
-    // 0x114 (276) → ammo[4]    GUN_SUBGUN
-    // 0x118 (280) → ammo[5]    GUN_SNIPER
-    // 0x11C (284) → ammo[6]    GUN_ASSAULT
-    // 0x120 (288) → ammo[7]    GUN_GRENADE
-    // 0x124 (292) → ammo[8]    GUN_AKIMBO
-    //
-    // 0x128 (296) → mag[0]     GUN_KNIFE
-    // 0x12C (300) → mag[1]     GUN_PISTOL
-    // 0x130 (304) → mag[2]     GUN_CARBINE
-    // 0x134 (308) → mag[3]     GUN_SHOTGUN
-    // 0x138 (312) → mag[4]     GUN_SUBGUN
-    // 0x13C (316) → mag[5]     GUN_SNIPER
-    // 0x140 (320) → mag[6]     GUN_ASSAULT
-    // 0x144 (324) → mag[7]     GUN_GRENADE
-    // 0x148 (328) → mag[8]     GUN_AKIMBO
-    //
-    // 0x14C (332) → gunwait[0] GUN_KNIFE
-    // 0x150 (336) → gunwait[1] GUN_PISTOL
-    // 0x154 (340) → gunwait[2] GUN_CARBINE
-    // 0x158 (344) → gunwait[3] GUN_SHOTGUN
-    // 0x15C (348) → gunwait[4] GUN_SUBGUN
-    // 0x160 (352) → gunwait[5] GUN_SNIPER
-    // 0x164 (356) → gunwait[6] GUN_ASSAULT
-    // 0x168 (360) → gunwait[7] GUN_GRENADE
-    // 0x16C (364) → gunwait[8] GUN_AKIMBO
-
-    int pstatshots[NUMGUNS], pstatdamage[NUMGUNS];
-    // stat tracking per gun — shots fired and damage dealt
-    // 0x170 (368) → pstatshots[0..8]   (9 × 4 = 36 bytes)
-    // 0x194 (404) → pstatdamage[0..8]  (9 × 4 = 36 bytes)
-    // playerstate ends at 0x1B8 (440)
-
-    // virtual functions (no data fields):
-    //   virtual ~playerstate()
-    //   virtual void spawnstate(int gamemode)
-};
+   those three questions get you 80% of the way through any function.
 ```
 
+To validate, grab that address and then work with it based on the code itself, in this case we add the initial offset of 4 and then add to it 205 to see if it actually gives us the value that we want. remember always read the source code and understand the behaviour.
 
-# ═══════════════════════════════════════════════════════
-# PLAYERENT — own fields start 0x1B8, size 1032 bytes total
-# source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L399
-# inherits dynent AND playerstate (left to right, in that order)
-# memory layout: [physent][dynent][playerstate][playerent own fields]
-# ═══════════════════════════════════════════════════════
+
+Now we want to apply the same methodology to the weapons.
+
+notes: ignore staic it means its not unique to this object. okay so this is abiut confusing when it comes to the gun object, it can be found through the playerent if we look for it through here
 
 ```cpp
 class playerent : public dynent, public playerstate
 {
+private:
     int curskin, nextskin[2];
-    // 0x1B8 (440) → curskin
-    // 0x1BC (444) → nextskin[0]
-    // 0x1C0 (448) → nextskin[1]
-
+public:
     int clientnum, lastupdate, plag, ping;
-    // 0x1C4 (452) → clientnum
-    // 0x1C8 (456) → lastupdate
-    // 0x1CC (460) → plag
-    // 0x1D0 (464) → ping
-
     enet_uint32 address;
-    // 0x1D4 (468) → address
-
-    int lifesequence;
-    // 0x1D8 (472) → lifesequence
-
+    int lifesequence;                   // sequence id for each respawn, used in damage test
     int frags, flagscore, deaths, tks;
-    // 0x1DC (476) → frags
-    // 0x1E0 (480) → flagscore
-    // 0x1E4 (484) → deaths
-    // 0x1E8 (488) → tks
-
     int lastaction, lastmove, lastpain, lastvoicecom, lastdeath;
-    // 0x1EC (492) → lastaction
-    // 0x1F0 (496) → lastmove
-    // 0x1F4 (500) → lastpain
-    // 0x1F8 (504) → lastvoicecom
-    // 0x1FC (508) → lastdeath
-
     int clientrole;
-    // 0x200 (512) → clientrole
-
     bool attacking;
-    // 0x204 (516) → attacking
-    // 0x205 (517) → [3 bytes padding — string requires 4-byte alignment]
+    string name;
+    int team;
+    int weaponchanging;
+    int nextweapon; // weapon we switch to
+    int spectatemode, followplayercn;
+    int eardamagemillis;
+    float maxroll, maxrolleffect, movroll, effroll;  // roll added by movement and damage
+    int ffov, scopefov;
+    bool allowmove() { return (state!=CS_DEAD && state!=CS_SPECTATE) || spectatemode==SM_FLY; }
 
+    weapon *weapons[NUMGUNS];
+    weapon *prevweaponsel, *weaponsel, *nextweaponsel, *primweap, *nextprimweap, *lastattackweapon; // this right here is what we want
+```
+
+my initial confusing was on WHAT is weaponsel?, this can be explained if we look back at the **weapon** itself here. They all have the astericks next to them which means they are pointers, which means they are an address to a weapon in memory.
+
+class/struct is used to define what an object would look like
+and an **instance** of that would be the object 
+
+```cpp
+class playerent;
+class bounceent;
+
+struct weapon
+{
+    const static int weaponchangetime;
+    const static float weaponbeloweye;
+    static void equipplayer(playerent *pl);
+
+    weapon(class playerent *owner, int type);
+    virtual ~weapon() {}
+
+    int type; // 4
+    playerent *owner; // 8 
+    const struct guninfo &info; // 12
+    int &ammo, &mag, &gunwait, shots;
+    virtual int dynspread();
+    virtual float dynrecoil();
+    int reloading, lastaction;
+```
+
+![alt text](image-4.png)
+
+so here it was found because well... the offset for the weapon was calculated wrong because the string for the player name was a NON-STANDARD size. when we look at the player
+name we can see the following
+
+```cpp
     string name;
     // ── NON-STANDARD SIZE — READ THIS ──
     // string is NOT std::string and NOT char[16]
@@ -392,339 +450,43 @@ class playerent : public dynent, public playerstate
     // MAXNAMELEN = 15 (line 296 entity.h) is only the content limit at runtime
     // source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L296
     // the storage buffer is ALWAYS 260 bytes regardless of content length
-    // CE confirmed: weaponsel appeared at 0x364, only works if name = 260 bytes
-    // lesson: ctrl+F for typedef before assigning size to any named type
+    // CE confirmed this: weaponsel appeared at 0x364, only works if name = 260 bytes
     // 0x208 (520)  → name[0]   ← name starts here after 3 bytes padding
     // 0x30C (780)  → name ends (520 + 260 = 780)
-
-    int team;
-    // 0x30C (780) → team  ← CE CONFIRMED 0=TEAM_CLA 1=TEAM_RVSF
-
-    int weaponchanging;
-    // 0x310 (784) → weaponchanging
-
-    int nextweapon;
-    // 0x314 (788) → nextweapon
-
-    int spectatemode, followplayercn;
-    // 0x318 (792) → spectatemode
-    // 0x31C (796) → followplayercn
-
-    int eardamagemillis;
-    // 0x320 (800) → eardamagemillis
-
-    float maxroll, maxrolleffect, movroll, effroll;
-    // 0x324 (804) → maxroll
-    // 0x328 (808) → maxrolleffect
-    // 0x32C (812) → movroll
-    // 0x330 (816) → effroll
-
-    int ffov, scopefov;
-    // 0x334 (820) → ffov
-    // 0x338 (824) → scopefov
-
-    weapon *weapons[NUMGUNS];
-    // ── NON-STANDARD SIZE — READ THIS ──
-    // NUMGUNS = 9, each pointer = 4 bytes, total = 36 bytes
-    // source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L59
-    //   enum { GUN_KNIFE=0, GUN_PISTOL, GUN_CARBINE, GUN_SHOTGUN,
-    //          GUN_SUBGUN, GUN_SNIPER, GUN_ASSAULT, GUN_GRENADE, GUN_AKIMBO, NUMGUNS };
-    // each entry = pointer (4 bytes) to a separate weapon object on the heap
-    // weapon objects are NOT stored inside playerent
-    // playerent just holds the addresses that find them
-    // all 9 exist in memory from spawn regardless of loadout
-    // 0x33C (828) → weapons[0] GUN_KNIFE
-    // 0x340 (832) → weapons[1] GUN_PISTOL
-    // 0x344 (836) → weapons[2] GUN_CARBINE
-    // 0x348 (840) → weapons[3] GUN_SHOTGUN
-    // 0x34C (844) → weapons[4] GUN_SUBGUN
-    // 0x350 (848) → weapons[5] GUN_SNIPER
-    // 0x354 (852) → weapons[6] GUN_ASSAULT
-    // 0x358 (856) → weapons[7] GUN_GRENADE
-    // 0x35C (860) → weapons[8] GUN_AKIMBO
-
-    weapon *prevweaponsel, *weaponsel, *nextweaponsel, *primweap, *nextprimweap, *lastattackweapon;
-    // all pointers to separate weapon objects, not inline data
-    // switching weapon = weaponsel updates to point to a different weapon object
-    // 0x360 (864) → prevweaponsel
-    // 0x364 (868) → weaponsel  ← CE CONFIRMED
-    // 0x368 (872) → nextweaponsel
-    // 0x36C (876) → primweap
-    // 0x370 (880) → nextprimweap
-    // 0x374 (884) → lastattackweapon
-
-    poshist history;
-    // ── NON-STANDARD SIZE — READ THIS ──
-    // poshist is a custom struct defined in entity.h
-    // source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L299
-    //   struct poshist {
-    //       int nextupdate;    → 4 bytes
-    //       int curpos;        → 4 bytes
-    //       int numpos;        → 4 bytes
-    //       vec pos[7];        → 7 × 12 = 84 bytes (vec = 3 floats × 4 bytes)
-    //   };                     → total = 96 bytes
-    // #define POSHIST_SIZE 7
-    // source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L297
-    // 0x378 (888)  → history start
-    // 0x3D8 (984)  → history end (888 + 96 = 984)
-
-    const char *skin_noteam, *skin_cla, *skin_rvsf;
-    // 0x3D8 (984) → skin_noteam
-    // 0x3DC (988) → skin_cla
-    // 0x3E0 (992) → skin_rvsf
-
-    float deltayaw, deltapitch, newyaw, newpitch;
-    // 0x3E4 (996)  → deltayaw
-    // 0x3E8 (1000) → deltapitch
-    // 0x3EC (1004) → newyaw
-    // 0x3F0 (1008) → newpitch
-
-    int smoothmillis;
-    // 0x3F4 (1012) → smoothmillis
-
-    vec head;
-    // 0x3F8 (1016) → head.x
-    // 0x3FC (1020) → head.y
-    // 0x400 (1024) → head.z
-
-    bool ignored, muted;
-    // 0x404 (1028) → ignored
-    // 0x405 (1029) → muted
-
-    bool nocorpse;
-    // 0x406 (1030) → nocorpse
-    // 0x407 (1031) → [1 byte padding]
-    // playerent ends at 0x408 (1032)
-};
 ```
 
-
-# ═══════════════════════════════════════════════════════
-# BOTENT — own fields start 0x408, size 1048 bytes total
-# source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L638
-# inherits playerent. same offsets as playerent for everything.
-# botent just adds 4 fields at the very end.
-# ═══════════════════════════════════════════════════════
+I wanted to test to find the weapon selected and now we wnt to see what actually is the next step. i have the weapon object and what else would be needed? i guess I want to look for the recoil
 
 ```cpp
-class botent : public playerent
+void weapon::attackphysics(vec &from, vec &to) // physical fx to the owner
 {
-    CBot *pBot;
-    // 0x408 (1032) → pBot — points to bot AI class, NULL for remote clients
+    const guninfo &g = info;
+    vec unitv;
+    float dist = to.dist(from, unitv);
+    float f = dist/1000;
+    int spread = dynspread();
+    float recoil = dynrecoil()*-0.01f;
 
-    playerent *enemy;
-    // 0x40C (1036) → enemy — which entity the bot is targeting
-
-    float targetpitch;
-    // 0x410 (1040) → targetpitch — direction bot wants to look
-
-    float targetyaw;
-    // 0x414 (1044) → targetyaw  — direction bot wants to look
-    // botent ends at 0x418 (1048)
-};
-```
-
-
-# ═══════════════════════════════════════════════════════
-# WEAPON OBJECTS — how they work
-# source: https://github.com/assaultcube/AC/blob/master/source/src/weapon.h
-# ═══════════════════════════════════════════════════════
-
-weapon* (with asterisk) means pointer — the field contains an ADDRESS of a
-weapon object, not the weapon data itself. the weapon object lives separately
-on the heap.
-
-all 9 weapon objects exist in memory from the moment the player spawns.
-created by weapon::equipplayer() which is called from newplayerent().
-weaponsel just changes to point to whichever one is currently active.
-switching weapon = weaponsel updates to a different address.
-the weapon objects themselves never move.
-
-```
-playerent object (in heap)
-┌────────────────────────────┐
-│ weapons[0] = 0x12345678   │──→ knife weapon object (somewhere in heap)
-│ weapons[1] = 0x23456789   │──→ pistol weapon object (somewhere in heap)
-│ weapons[5] = 0xFFFF0000   │──→ sniper weapon object (somewhere in heap)
-│ ...                        │
-│ weaponsel  = 0xFFFF0000   │──→ points to SAME sniper as weapons[5]
-└────────────────────────────┘   (if sniper is currently selected)
-```
-
-```cpp
-// weapon struct layout
-// source: https://github.com/assaultcube/AC/blob/master/source/src/weapon.h
-struct weapon
-{
-    // virtual ~weapon() exists → vtable ptr
-    // 0x000 (0) → vtable ptr (4 bytes)
-
-    int type;
-    // 0x004 (4) → which gun enum value (0=knife 1=pistol ... 8=akimbo)
-
-    playerent *owner;
-    // 0x008 (8) → pointer back to the playerent that owns this weapon
-
-    const struct guninfo &info;
-    // ── NON-STANDARD — READ THIS ──
-    // reference = pointer in memory (4 bytes)
-    // points to a guninfo entry in the global guns[NUMGUNS] array
-    // guninfo is a static data table — all pistols share one entry,
-    // all snipers share one entry etc. lives in ac_client.exe static region.
-    // source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L74
-    // 0x00C (12) → address of this weapon's guninfo entry
-
-    int &ammo, &mag, &gunwait;
-    // ── NON-STANDARD — READ THIS ──
-    // references back into playerstate ammo[], mag[], gunwait[] arrays
-    // in memory each reference = 4 bytes (same as pointer)
-    // they don't store ammo directly — they point back into playerstate
-    // when weapon fires: ammo-- → modifies playerstate.ammo[type] directly
-    // 0x010 (16) → reference to ammo[this weapon's gun type]
-    // 0x014 (20) → reference to mag[this weapon's gun type]
-    // 0x018 (24) → reference to gunwait[this weapon's gun type]
-
-    int shots;
-    // 0x01C (28) → shots fired counter
-
-    // everything after this is virtual functions → no data fields
-};
-```
-
-weapon inheritance chain (each adds own fields after weapon base):
-
-```
-weapon          ← base, all shared fields
-    gun         ← middle layer, most guns use this
-        subgun
-        sniperrifle  ← adds: bool scoped, int scoped_since
-        carbine
-        shotgun
-        assaultrifle
-        pistol
-        akimbo   ← adds: int akimboside, akimbomillis, akimbolastaction[2]
-    grenades     ← inherits weapon directly, adds throw state fields
-    knife        ← inherits weapon directly, no extra fields
-```
+    // spread
+    if(spread>1)
+    {
+        #define RNDD (rnd(spread)-spread/2)*f
+        vec r(RNDD, RNDD, RNDD);
+        to.add(r);
+        #undef RNDD
+    }
+    // kickback & recoil
+    if(recoiltest)
+    {
+        owner->vel.add(vec(unitv).mul(recoil/dist).mul(owner->crouching ? 0.75 : 1.0f));
+        owner->pitchvel = min(powf(shots/(float)(recoilincrease), 2.0f)+(float)(recoilbase)/10.0f, (float)(maxrecoil)/10.0f);
+    }
+    else
+    {
+        owner->vel.add(vec(unitv).mul(recoil/dist).mul(owner->crouching ? 0.75 : 1.0f));
+        owner->pitchvel = min(powf(shots/(float)(g.recoilincrease), 2.0f)+(float)(g.recoilbase)/10.0f, (float)(g.maxrecoil)/10.0f);
+    }
+}
 
 
-# ═══════════════════════════════════════════════════════
-# GUNINFO — global static array, shared by all players
-# source: https://github.com/assaultcube/AC/blob/master/source/src/entity.h#L74
-# lives in ac_client.exe static region. same address every session.
-# one entry per gun type. all players using same gun share same entry.
-# ═══════════════════════════════════════════════════════
-
-```cpp
-struct guninfo
-{
-    char modelname[23];   // 0x00 (0)  → "sniper", "pistol" etc
-    char title[42];       // 0x17 (23) → "AD-81 SR", "Pistol" etc
-    // ── PADDING — READ THIS ──
-    // title ends at byte 65 which is ODD
-    // shorts need even addresses (65 % 2 = 1 → not even)
-    // compiler inserts 1 byte padding before first short
-    // [1 byte padding] → 0x41 (65)
-
-    short sound;          // 0x42 (66)
-    short reload;         // 0x44 (68)
-    short reloadtime;     // 0x46 (70)
-    short attackdelay;    // 0x48 (72)
-    short damage;         // 0x4A (74) ← damage per shot
-    short piercing;       // 0x4C (76)
-    short projspeed;      // 0x4E (78)
-    short part;           // 0x50 (80)
-    short spread;         // 0x52 (82)
-    short recoil;         // 0x54 (84)
-    short magsize;        // 0x56 (86) ← magazine size
-    short mdl_kick_rot;   // 0x58 (88)
-    short mdl_kick_back;  // 0x5A (90)
-    short recoilincrease; // 0x5C (92)
-    short recoilbase;     // 0x5E (94)
-    short maxrecoil;      // 0x60 (96)
-    short recoilbackfade; // 0x62 (98)
-    short pushfactor;     // 0x64 (100)
-    bool  isauto;         // 0x66 (102)
-    // total = 103 bytes
-};
-
-extern guninfo guns[NUMGUNS];
-// NUMGUNS = 9 (from enum)
-// guns[0] = knife stats
-// guns[1] = pistol stats
-// guns[5] = sniper stats  ← "sniper" at base + 0
-// etc.
-```
-
-sniper guninfo values for reference:
-
-```
-{ "sniper", "AD-81 SR", S_SNIPER, S_RSNIPER, 1950, 1500, 82, 25, 0, 0, 50, 50, 5, 4, 4, 10, 85, 85, 100, 1, false }
-  modelname  title       sound     reload     rtime  adel  dmg prc psp prt spr rec mag mkr mkb ri   rb   mr   rbf  pf  auto
-```
-
-
-# ═══════════════════════════════════════════════════════
-# FULL POINTER CHAIN — playerent base to weapon stats
-# ═══════════════════════════════════════════════════════
-
-```
-playerent base
-    ↓ + 0x364           → weaponsel (pointer to active weapon object)
-weapon object base
-    ↓ + 0x4             → type (int, which gun: 0=knife 5=sniper etc)
-    ↓ + 0xC             → info (pointer to guninfo entry in static region)
-guninfo entry base
-    ↓ + 0x00            → modelname ("sniper")
-    ↓ + 0x4A            → damage (short, 2 bytes)
-    ↓ + 0x54            → recoil (short, 2 bytes)
-    ↓ + 0x56            → magsize (short, 2 bytes)
-    ↓ + 0x5E            → recoilbase (short, 2 bytes)
-```
-
-in CE pointer chain (bottom to top):
-
-```
-ac_client.exe+18AC00   ← static pointer to player1 object
-    ↓ +0x364           ← weaponsel in playerent
-    ↓ +0xC             ← info in weapon object
-    ↓ +0x00            ← modelname in guninfo
-→ "sniper"
-```
-
-
-# ═══════════════════════════════════════════════════════
-# CONFIRMED STATIC POINTERS
-# ═══════════════════════════════════════════════════════
-
-```
-ac_client.exe+18AC00 → player1 object base (our player, direct pointer)
-ac_client.exe+18AC04 → entity array base (bots and other players)
-```
-
-confirmed in assembly:
-
-```asm
-ac_client.exe+61489 - mov eax,[ac_client.exe+18AC00] { (00821120) }
-ac_client.exe+81AE0 - mov ebx,[ac_client.exe+18AC04] { (234908E8) }
-```
-
-confirmed offsets:
-
-```
-health:    object base + 0xEC   ← CE CONFIRMED
-armour:    object base + 0xF0
-type:      object base + 0x077  ← 0=player 1=bot
-name:      object base + 0x208  ← string starts here (after 3 bytes padding)
-team:      object base + 0x30C  ← CE CONFIRMED 0=CLA 1=RVSF
-weaponsel: object base + 0x364  ← CE CONFIRMED
-```
-
-entity array pointer chain (for bots):
-
-```
-ac_client.exe+18AC04   ← static pointer to entity array
-    ↓ +4               ← first slot = bot 1 object base
-    ↓ +0xEC            ← health field
-→ bot health value
 ```

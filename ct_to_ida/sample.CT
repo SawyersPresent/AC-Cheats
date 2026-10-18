@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="52">
+  <CheatEntries>
+
+    <!-- module+offset, no pointer chain (stable across runs) -->
+    <CheatEntry>
+      <ID>1</ID>
+      <Description>"Player Health"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>ac_client.exe+0x18EC</Address>
+    </CheatEntry>
+
+    <!-- module+offset with single dereference -->
+    <CheatEntry>
+      <ID>2</ID>
+      <Description>"Player Base Ptr"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>ac_client.exe+191FCC</Address>
+      <Offsets>
+        <Offset>0</Offset>
+      </Offsets>
+    </CheatEntry>
+
+    <!-- module+offset with two-level pointer chain -->
+    <CheatEntry>
+      <ID>3</ID>
+      <Description>"BOT 2 Name"</Description>
+      <VariableType>String</VariableType>
+      <Address>ac_client.exe+18AC04</Address>
+      <Offsets>
+        <Offset>205</Offset>
+        <Offset>8</Offset>
+      </Offsets>
+    </CheatEntry>
+
+    <!-- static plain hex (session-specific) -->
+    <CheatEntry>
+      <ID>4</ID>
+      <Description>"AMMO REAL"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>256386DC</Address>
+    </CheatEntry>
+
+    <!-- static with subtraction arithmetic -->
+    <CheatEntry>
+      <ID>5</ID>
+      <Description>"HEALTH offset"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>00939F30-4</Address>
+    </CheatEntry>
+
+    <!-- static with addition arithmetic -->
+    <CheatEntry>
+      <ID>6</ID>
+      <Description>"X AXIS MAP"</Description>
+      <VariableType>Float</VariableType>
+      <Address>00939F2C+298</Address>
+    </CheatEntry>
+
+    <!-- module+offset with five-level pointer chain (deep chain edge case) -->
+    <CheatEntry>
+      <ID>7</ID>
+      <Description>"Deep chain test"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>ac_client.exe+18AC04</Address>
+      <Offsets>
+        <Offset>0x10</Offset>
+        <Offset>0x20</Offset>
+        <Offset>0x30</Offset>
+        <Offset>0x40</Offset>
+        <Offset>0x50</Offset>
+      </Offsets>
+    </CheatEntry>
+
+    <!-- entry with no Address (group header, should be skipped) -->
+    <CheatEntry>
+      <ID>8</ID>
+      <Description>"Group: Weapons"</Description>
+      <VariableType>4 Bytes</VariableType>
+    </CheatEntry>
+
+  </CheatEntries>
+</CheatTable>

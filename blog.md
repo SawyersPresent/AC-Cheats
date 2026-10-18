@@ -4,9 +4,24 @@ https://gamehacking.academy/pages/1/02/#memory
 https://github.com/assaultcube/AC/blob/13f0d8eea4822dee5c976661218d022be74342e3/source/src/entity.h
 https://www.youtube.com/watch?v=TCu0qSivXUc
 
-# FOR REFERENCE
+# From mumpsimus to a greenhorn
 
-the full workflow from zero
+
+## Introduction
+
+I got into this from a dear friend of mine, Ive always wanted to get into VR, Game hacking and just anything related to reverse engineering. Initially when I first started cyber security, I despised the idea of reversing, writing in C or anything related to pwn, I would turn into a cannon shooting straight projectile vommit onto my keyboard.
+
+Now after much reflection (and some therapy) I have come to realise that I got into this field to love breaking stuff and exploration, now this is me finally doing msyelf justice to just fuck around and find out. 
+
+
+### Disclaimer: Reference sheet.
+This is a 32-Bit program, so the way we calculate these bytes and do the math bullshit will be different from a normal 64-Bit program. Attached following is a reference sheet for the assembly, byte sizes, 
+
+
+## Now the show begins
+
+Now the full workflow from zero to hero.
+
 
 1. scan for a known value (health = 100)
 2. damage/heal to narrow down to one address → confirmed field address
@@ -100,49 +115,15 @@ in CE:
       not from the static pointer
       not from the field address
 
+So how do we start this, what do we do? and why?, We want to be able to read our own attributes to be able to locate ourself, based on this we could infer what the other objects like other players, weapons, etc. would look like. 
 
-to usually find our own player object what we can / need to do would be to have our health and damage ourselves and then do decrease by and see what keeps changing, and then we have the health and etc. 
+to usually find our own player object what we can / need to do would be to have our health and damage ourselves and then find it as the value decreases and see what keeps changing, and then we have the health and etc. 
 
 interms of finding ourselves and the entire struct, remember that the tool for creating data structuers cheat engine guesses it so it could or could not be accurate, this is  a psosibility, some attributes just get missed completely or they assume theyre 4 bytes instead of 1 and etc. etc.
 
 
-why pointers and addresses are always hex
 
-   every address you see in CE, disassemblers, memory view → hex.
-   hex digits are 0-9 and A-F. if you see letters in an address that's why.
-   0x prefix just makes it explicit. 0x1F5A19B4 and 1F5A19B4 are the same thing.
-
-   when doing math on addresses always use Calculator in Programmer mode with HEX selected.
-   decimal will reject the letters and give you garbage.
-
-   subtracting an offset from an address:
-      health_address - 0xEC = object base
-      you're asking "health is 236 bytes forward from the start, so where is the start?"
-      going backwards by the offset lands you at offset 0 = the object base.
-
-
-why subtracting 0xEC from health gives you the object base and not something weird
-
-   the inheritance chain stacks in memory like this:
-      offset 0:   physent block     ← object base (this is what you want)
-      offset 128: dynent block
-      offset 232: playerstate block ← health lives in here at +4 from playerstate start
-      offset 440: playerent own fields
-
-   physent is always first because it's the root parent. every class that inherits
-   from physent starts with the physent block at offset 0. so the object base of any
-   playerent, botent, dynent IS the start of the physent block.
-
-   health is at 0xEC (236) from that base. subtract that from any health address
-   and you always land at offset 0 = the object base = the physent vtable pointer.
-
-   this is why the same subtraction works for players AND bots. same inheritance
-   chain, same layout, same offsets. just different object base addresses.
-
-
-# Time to work.
-
-
+## Time to work.
 
 So now we have the ability to finally be able to fucking validate small dynamic / initial base addresses using these offsites.
 
@@ -507,5 +488,15 @@ now we save this then we close the game and boot it back up to see if its actual
 
 so it starts with the following, find the value, use the value to find its offset, use the offset to find its base address, use base address to find static global pointer
 
-for the weapons it makes sense to me now, saif remeber to ducment this bullshit after studying for the GRE tomorrow and going to gradmas, its litearlly just playerstat -> weaponsel* (which is a object created from weapon) ->weapon -> guninfo(which is an array that contains the information we want)
+for the weapons it makes sense to me now, its litearlly just playerstat -> weaponsel* (which is a object created from weapon) ->weapon -> guninfo(which is an array that contains the information we want)
+
+Now with all of this information we can essentially get to cooking. we have the methodology set, we have the health, gun values, xyz coordinates too!. Now whenever we need to find other objects related to the characters we should be able to 
+
+
+
+# Writing code
+
+So, just so you know I havent written in C in ages and most of the time I would have AI assist me but I kind of want to raw dawg it... pls dont judge thx lol 
+
+
 
