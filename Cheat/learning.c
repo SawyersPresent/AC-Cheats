@@ -111,7 +111,6 @@ void PlayerNameFunction(char *buffer, int bufferSize){
 
 int main()
 {
-    
 
     // erm...
     DWORD pid = GetPID("ac_client.exe");
