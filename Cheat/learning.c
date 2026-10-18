@@ -12,8 +12,9 @@
 #include <tlhelp32.h>
 
 #define MY_BUFFER_SIZE 24
-
-
+#define BOT 0x4
+#define Name 0x205
+#define Health 0xEC
 
 int main()
 {
@@ -25,7 +26,7 @@ int main()
 
 
 
-    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 69696969); // we open up handles to  be able to take the snapshots necessary
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPALL, NULL); // we open up handles to  be able to take the snapshots necessary
     if (snapshot == INVALID_HANDLE_VALUE){ // add a failure check
         printf("it failed");
     }
@@ -72,7 +73,7 @@ int main()
 
         char mybuffer[MY_BUFFER_SIZE];
 
-        BOOL rMemory = ReadProcessMemory(ac_handle, (LPCVOID)0x007C4BF5, mybuffer, sizeof(mybuffer), NULL); // IT WORKEDD
+        BOOL rMemory = ReadProcessMemory(ac_handle, (LPCVOID)0x007C4BF5, mybuffer, sizeof(mybuffer), NULL); // IT WORKEDD, this is atleast hardcoded we want offset
         
         if (rMemory != 0){
             printf("le success \n");
@@ -81,7 +82,7 @@ int main()
 
         // now to read the module base
         
-        HANDLE ModuleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 31080); // we open up handles to  be able to take the snapshots necessary
+        HANDLE ModuleSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pe32.th32ProcessID); // we open up handles to  be able to take the snapshots necessary
 
         BOOL ModuleEnum = Module32First(ModuleSnapshot, &me32);
         if(ModuleEnum == TRUE){
@@ -89,6 +90,24 @@ int main()
         }else{
             printf("it failed \n");
         };
+
+        DWORD OurPlayerBase = 0;
+
+        ReadProcessMemory(ac_handle, me32.modBaseAddr+0x18AC00, &OurPlayerBase, sizeof(DWORD), NULL); // PlayerBase to be stored in DWORD
+        
+        char newbuffer[MY_BUFFER_SIZE];
+
+        ReadProcessMemory(ac_handle, 
+        (LPCVOID)(OurPlayerBase+Name), // this is imporatnt, first we want to add the base and the name together and then use LPCVOID (a pointer to somewhere with no specified type)
+        newbuffer, 
+        sizeof(newbuffer), 
+        NULL); // finally able to actually use said playerbase and offsets. Nothing hardcoded
+
+
+        printf("Here this is ment to be our name... I hope it works... with the playerbase, module reading and etc. %s \n", newbuffer);
+
+
+
 
 
 
