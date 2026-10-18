@@ -18,14 +18,24 @@ int main()
         while ( Processresult == TRUE ){ // while loop is actually baller because initially it was all if statments but ik the return values now so we chilling
                 printf("it worked! \n");
 
-                if (strcmp("ac_client.exe",pe32.szExeFile)){
+                if (strcmp("ac_client.exe", pe32.szExeFile) == 0)
+                {
                     printf("We foundd ittt\n");
+                    printf("======================== \n");
+                    printf("Name: %s \n", pe32.szExeFile);
+                    printf("PID: %lu \n", pe32.th32ProcessID);
+                    printf("PPID: %lu \n", pe32.th32ParentProcessID);
+
                     break;
                     
                 };
 
             BOOL NextProcess = Process32Next(snapshot, &pe32);                
             Processresult = NextProcess;
+
+
+
+
             if (Processresult == FALSE )
             {
                 printf("not copied \n");
@@ -33,9 +43,8 @@ int main()
                     printf("no processes exist or the snapshot does not contain process information \n");
                 }
             };
-
-
     }
+
 
     return 0;
     
