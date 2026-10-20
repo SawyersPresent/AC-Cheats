@@ -18,7 +18,7 @@
 #define PROCESS_NAME "ac_client.exe"
 
 
-DWORD GetPID(char *processName){
+DWORD GetPID(){
     PROCESSENTRY32 pe32; // here we define the normal process structure so were able to interact with PE's
     pe32.dwSize = sizeof(pe32); // then apparently its necessary to set the p32.dwsize even though its never used? 
 
@@ -30,7 +30,7 @@ DWORD GetPID(char *processName){
         BOOL Processresult = Process32First(snapshot, &pe32); // now we use process32first to actually be able to parse the result of the snapshot, it takes the handle to
         
         while ( Processresult == TRUE ){ // while loop is actually baller because initially it was all if statments but ik the return values now so we chilling
-                if (strcmp(processName, pe32.szExeFile) == 0)
+                if (strcmp(PROCESS_NAME, pe32.szExeFile) == 0)
                 {
                     printf("We have AC_Client\n");
                     printf("======================== \n");
@@ -70,7 +70,7 @@ DWORD GetPID(char *processName){
 };
 
 DWORD GetBase(){
-        DWORD Func1 = GetPID("ac_client.exe");
+        DWORD Func1 = GetPID();
 
         MODULEENTRY32 me32; // now we do the moduels so we can do deepre module enumeration
         me32.dwSize = sizeof(me32);
@@ -84,7 +84,7 @@ DWORD GetBase(){
             printf("it failed \n");
         };
 
-                char mybuffer[MY_BUFFER_SIZE];
+        char mybuffer[MY_BUFFER_SIZE];
 
         
         HANDLE ac_handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, Func1);

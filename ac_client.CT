@@ -2,78 +2,11 @@
 <CheatTable CheatEngineTableVersion="52">
   <CheatEntries>
     <CheatEntry>
-      <ID>1</ID>
-      <Description>"AMMO REAL"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>256386DC</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>0</ID>
-      <Description>"AMMO UI"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>00939F80</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>5</ID>
-      <Description>"ARMOR DUMMY"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>2563868C</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>4</ID>
-      <Description>"ARMOR UI"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>00939F30</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>9</ID>
-      <Description>"DOUBLE PISTOL"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>00939F88</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>10</ID>
-      <Description>"DOUBLE PISTOL (Dummy)"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>256386E4</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>6</ID>
-      <Description>"HEALTH"</Description>
+      <ID>13</ID>
+      <Description>"YAW (left and right)"</Description>
       <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>4 Bytes</VariableType>
-      <Address>00939F30-4</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>3</ID>
-      <Description>"NADE (DUMMY?)"</Description>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>4 Bytes</VariableType>
-      <Address>256386E0</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>2</ID>
-      <Description>"NADE UI+REAL? "</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>00939F84</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>8</ID>
-      <Description>"PISTOL (dummy)"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>256386C8</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>7</ID>
-      <Description>"PISTOL UI"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>00939F6C</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>11</ID>
-      <Description>"X AXIS MAP"</Description>
       <VariableType>Float</VariableType>
-      <Address>00939F2C+298</Address>
+      <Address>00939E74</Address>
     </CheatEntry>
     <CheatEntry>
       <ID>12</ID>
@@ -82,25 +15,10 @@
       <Address>00939F2C+29C</Address>
     </CheatEntry>
     <CheatEntry>
-      <ID>13</ID>
-      <Description>"YAW (left and right)"</Description>
-      <ShowAsSigned>0</ShowAsSigned>
+      <ID>11</ID>
+      <Description>"X AXIS MAP"</Description>
       <VariableType>Float</VariableType>
-      <Address>00939E74</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>14</ID>
-      <Description>"Pitch Up down "</Description>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>Float</VariableType>
-      <Address>00939E78</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>15</ID>
-      <Description>"No description"</Description>
-      <ShowAsHex>1</ShowAsHex>
-      <VariableType>4 Bytes</VariableType>
-      <Address>0019F1F0</Address>
+      <Address>00939F2C+298</Address>
     </CheatEntry>
     <CheatEntry>
       <ID>16</ID>
@@ -111,75 +29,17 @@
       <Address>939E40</Address>
     </CheatEntry>
     <CheatEntry>
-      <ID>17</ID>
-      <Description>"current bot HP"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>27136B7C</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>18</ID>
-      <Description>"BOT Base Array?"</Description>
-      <ShowAsHex>1</ShowAsHex>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>Array of byte</VariableType>
-      <ByteLength>0</ByteLength>
-      <Address>27136A90</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>19</ID>
-      <Description>"Bot Health offset"</Description>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>4 Bytes</VariableType>
-      <Address>27136A90+0x0ec</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>20</ID>
-      <Description>"o.x bot"</Description>
+      <ID>14</ID>
+      <Description>"Pitch Up down "</Description>
       <ShowAsSigned>0</ShowAsSigned>
       <VariableType>Float</VariableType>
-      <Address>27136A90+0x004</Address>
+      <Address>00939E78</Address>
     </CheatEntry>
     <CheatEntry>
-      <ID>21</ID>
-      <Description>"o.y bot"</Description>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>Float</VariableType>
-      <Address>27136A90+0x008</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>22</ID>
-      <Description>"o.z bot"</Description>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>Float</VariableType>
-      <Address>27136A90+0x00C</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>23</ID>
-      <Description>"Bot Name"</Description>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>String</VariableType>
-      <Length>10</Length>
-      <Unicode>0</Unicode>
-      <CodePage>0</CodePage>
-      <ZeroTerminate>1</ZeroTerminate>
-      <Address>27136A90+0x205</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>24</ID>
-      <Description>"bot 1 object through base address"</Description>
-      <ShowAsHex>1</ShowAsHex>
-      <ShowAsSigned>0</ShowAsSigned>
+      <ID>7</ID>
+      <Description>"PISTOL UI"</Description>
       <VariableType>4 Bytes</VariableType>
-      <Address>ac_client.exe+191FCC</Address>
-      <Offsets>
-        <Offset>0</Offset>
-      </Offsets>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>25</ID>
-      <Description>"BOT HEALTH NEW FAG"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>24FCDC1C</Address>
+      <Address>00939F6C</Address>
     </CheatEntry>
     <CheatEntry>
       <ID>26</ID>
@@ -193,6 +53,13 @@
       <Address>24FCDB30+0x205</Address>
     </CheatEntry>
     <CheatEntry>
+      <ID>6</ID>
+      <Description>"HEALTH"</Description>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>4 Bytes</VariableType>
+      <Address>00939F30-4</Address>
+    </CheatEntry>
+    <CheatEntry>
       <ID>27</ID>
       <Description>"Global FUICKING DFINALLY bot 1"</Description>
       <ShowAsHex>1</ShowAsHex>
@@ -202,6 +69,123 @@
       <Offsets>
         <Offset>4</Offset>
       </Offsets>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>10</ID>
+      <Description>"DOUBLE PISTOL (Dummy)"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>256386E4</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>9</ID>
+      <Description>"DOUBLE PISTOL"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>00939F88</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>17</ID>
+      <Description>"current bot HP"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>27136B7C</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>43</ID>
+      <Description>"BOTS stuff"</Description>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>4 Bytes</VariableType>
+      <Address>ac_client.exe+18AC00</Address>
+      <Offsets>
+        <Offset>4</Offset>
+      </Offsets>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>28</ID>
+          <Description>"BOT 1 NAME"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>String</VariableType>
+          <Length>12</Length>
+          <Unicode>0</Unicode>
+          <CodePage>0</CodePage>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>ac_client.exe+18AC04</Address>
+          <Offsets>
+            <Offset>205</Offset>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>29</ID>
+          <Description>"BOT 1 Health"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>ac_client.exe+18AC04</Address>
+          <Offsets>
+            <Offset>0xEC</Offset>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>30</ID>
+          <Description>"BOT KIlls works global"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>ac_client.exe+18AC04</Address>
+          <Offsets>
+            <Offset>0x1DC</Offset>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>33</ID>
+          <Description>"Weapon from playerent"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>String</VariableType>
+          <Length>10</Length>
+          <Unicode>0</Unicode>
+          <CodePage>0</CodePage>
+          <ZeroTerminate>1</ZeroTerminate>
+          <Address>ac_client.exe+18AC04</Address>
+          <Offsets>
+            <Offset>0</Offset>
+            <Offset>C</Offset>
+            <Offset>0x364</Offset>
+            <Offset>4</Offset>
+          </Offsets>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>23</ID>
+      <Description>"Bot Name"</Description>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>String</VariableType>
+      <Length>10</Length>
+      <Unicode>0</Unicode>
+      <CodePage>0</CodePage>
+      <ZeroTerminate>1</ZeroTerminate>
+      <Address>27136A90+0x205</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>19</ID>
+      <Description>"Bot Health offset"</Description>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>4 Bytes</VariableType>
+      <Address>27136A90+0x0ec</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>25</ID>
+      <Description>"BOT HEALTH NEW FAG"</Description>
+      <VariableType>4 Bytes</VariableType>
+      <Address>24FCDC1C</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>18</ID>
+      <Description>"BOT Base Array?"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <ShowAsSigned>0</ShowAsSigned>
+      <VariableType>Array of byte</VariableType>
+      <ByteLength>0</ByteLength>
+      <Address>27136A90</Address>
     </CheatEntry>
     <CheatEntry>
       <ID>32</ID>
@@ -230,44 +214,14 @@
       </Offsets>
     </CheatEntry>
     <CheatEntry>
-      <ID>40</ID>
-      <Description>"NEW BASE HEALTH"</Description>
-      <VariableType>4 Bytes</VariableType>
-      <Address>0083A4EC</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>35</ID>
-      <Description>"new base 1 disassembler with offset"</Description>
+      <ID>24</ID>
+      <Description>"bot 1 object through base address"</Description>
+      <ShowAsHex>1</ShowAsHex>
       <ShowAsSigned>0</ShowAsSigned>
       <VariableType>4 Bytes</VariableType>
-      <Address>0076AC98+ec</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>36</ID>
-      <Description>"address 1"</Description>
-      <ShowAsHex>1</ShowAsHex>
-      <VariableType>4 Bytes</VariableType>
-      <Address>ac_client.exe+17E254</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>37</ID>
-      <Description>"address 2"</Description>
-      <ShowAsHex>1</ShowAsHex>
-      <VariableType>4 Bytes</VariableType>
-      <Address>ac_client.exe+17E360</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>38</ID>
-      <Description>"address 3 SUSPECTED"</Description>
-      <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>String</VariableType>
-      <Length>10</Length>
-      <Unicode>0</Unicode>
-      <CodePage>0</CodePage>
-      <ZeroTerminate>1</ZeroTerminate>
-      <Address>ac_client.exe+18AC00</Address>
+      <Address>ac_client.exe+191FCC</Address>
       <Offsets>
-        <Offset>205</Offset>
+        <Offset>0</Offset>
       </Offsets>
     </CheatEntry>
     <CheatEntry>
@@ -285,7 +239,7 @@
           <Description>"Player name?"</Description>
           <ShowAsSigned>0</ShowAsSigned>
           <VariableType>String</VariableType>
-          <Length>10</Length>
+          <Length>12</Length>
           <Unicode>0</Unicode>
           <CodePage>0</CodePage>
           <ZeroTerminate>1</ZeroTerminate>
@@ -403,70 +357,18 @@
       </CheatEntries>
     </CheatEntry>
     <CheatEntry>
-      <ID>43</ID>
-      <Description>"BOTS stuff"</Description>
+      <ID>38</ID>
+      <Description>"address 3 SUSPECTED"</Description>
       <ShowAsSigned>0</ShowAsSigned>
-      <VariableType>4 Bytes</VariableType>
+      <VariableType>String</VariableType>
+      <Length>10</Length>
+      <Unicode>0</Unicode>
+      <CodePage>0</CodePage>
+      <ZeroTerminate>1</ZeroTerminate>
       <Address>ac_client.exe+18AC00</Address>
       <Offsets>
-        <Offset>4</Offset>
+        <Offset>205</Offset>
       </Offsets>
-      <CheatEntries>
-        <CheatEntry>
-          <ID>28</ID>
-          <Description>"BOT 1 NAME"</Description>
-          <ShowAsSigned>0</ShowAsSigned>
-          <VariableType>String</VariableType>
-          <Length>12</Length>
-          <Unicode>0</Unicode>
-          <CodePage>0</CodePage>
-          <ZeroTerminate>1</ZeroTerminate>
-          <Address>ac_client.exe+18AC04</Address>
-          <Offsets>
-            <Offset>205</Offset>
-            <Offset>4</Offset>
-          </Offsets>
-        </CheatEntry>
-        <CheatEntry>
-          <ID>29</ID>
-          <Description>"BOT 1 Health"</Description>
-          <ShowAsSigned>0</ShowAsSigned>
-          <VariableType>4 Bytes</VariableType>
-          <Address>ac_client.exe+18AC04</Address>
-          <Offsets>
-            <Offset>0xEC</Offset>
-            <Offset>4</Offset>
-          </Offsets>
-        </CheatEntry>
-        <CheatEntry>
-          <ID>30</ID>
-          <Description>"BOT KIlls works global"</Description>
-          <ShowAsSigned>0</ShowAsSigned>
-          <VariableType>4 Bytes</VariableType>
-          <Address>ac_client.exe+18AC04</Address>
-          <Offsets>
-            <Offset>0x1DC</Offset>
-            <Offset>4</Offset>
-          </Offsets>
-        </CheatEntry>
-        <CheatEntry>
-          <ID>33</ID>
-          <Description>"Weapon from playerent"</Description>
-          <ShowAsSigned>0</ShowAsSigned>
-          <VariableType>String</VariableType>
-          <Length>10</Length>
-          <Unicode>0</Unicode>
-          <CodePage>0</CodePage>
-          <ZeroTerminate>1</ZeroTerminate>
-          <Address>ac_client.exe+18AC04</Address>
-          <Offsets>
-            <Offset>0</Offset>
-            <Offset>C</Offset>
-            <Offset>0x364</Offset>
-            <Offset>4</Offset>
-          </Offsets>
-        </CheatEntry>
-      </CheatEntries>
     </CheatEntry>
   </CheatEntries>
   <UserdefinedSymbols/>
