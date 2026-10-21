@@ -138,15 +138,15 @@ struct ACProcess PlayerNameFunction(struct ACProcess ac, char *buffer, int buffe
 
 
 struct ACProcess PlayerHealth(struct ACProcess ac){
-        DWORD health;
-        DWORD Base = ac.base;
-        BOOL PlayerHealthBOOL = ReadProcessMemory(ac.handle, (LPCVOID)(ac.base+Health), // this is important, first we want to add the base and the name together and then use LPCVOID (a pointer to somewhere with no specified type)
-        &health, 
-        sizeof(health), 
-        NULL); // finally able to actually use said playerbase and offsets. Nothing hardcoded
-        ac.health = health; //i forgogt to ad ther turn statement like a retard. if a value isnt coming back and its being printed i wonder why thats happening lol
-        return ac;  // ← this line
-     
+        DWORD health = 0;
+        BOOL PlayerHealthBOOL = ReadProcessMemory(
+            ac.handle, 
+            (LPCVOID)(ULONG_PTR)(ac.base+Health), // mistake 3 was: (LPCVOID)(ac.base+Health), DWORD to LPCVOID size mismatch, needs ULONG_PTR cast
+            &health, 
+            sizeof(health), 
+            NULL);
+        ac.health = health; // mistake 4: this is correct but pointless without return ac — sets the copy then copy disappears
+        return ac; // mistake 4 fix: without this line ac.health is set on the copy and thrown away
 };
 
 
@@ -160,15 +160,15 @@ int main()
     printf("PID of ac_client %lu \n", ac.pid);
     char mybuffer[MY_BUFFER_SIZE] = {0}; //how to initialize an array
 
-    PlayerNameFunction(ac, mybuffer, sizeof(mybuffer));
+    PlayerNameFunction(ac, mybuffer, sizeof(mybuffer)); // char* buffer is a pointer so writes go to original memory directly, no catch needed.
     printf("now what were going to do is the module retardation heres the name please work %s \n", mybuffer);
 
-    ac = PlayerHealth(ac);
+    ac = PlayerHealth(ac); // okay so everytime i NEED TO CALL the function I need to re-assign the object  to make sure the objects are updated 
     printf("now what were going to do is the module retardation heres the name please work %d \n", ac.health);
-
     
     
-
+    
+    
 
     return 0;
     
