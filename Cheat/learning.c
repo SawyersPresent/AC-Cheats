@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <tlhelp32.h>
 
-#define MY_BUFFER_SIZE 24
+#define MY_BUFFER_SIZE 36
 #define BOT 0x4
 #define Name 0x205
 #define Health 0xEC
@@ -24,6 +24,8 @@ struct ACProcess
     DWORD  pid;
     DWORD base;
     HANDLE handle;
+    DWORD playername;
+    DWORD health;
 };
 
 
@@ -110,19 +112,43 @@ struct ACProcess GetBase(struct ACProcess ac){
     return ac;
 }
 
-void PlayerNameFunction(struct ACProcess ac, char *buffer, int bufferSize){
+
+
+struct ACProcess PlayerNameFunction(struct ACProcess ac, char *buffer, int bufferSize){
         DWORD Base = ac.base;
         BOOL PlayerNameFromBase = ReadProcessMemory(ac.handle, (LPCVOID)(ac.base+Name), // this is important, first we want to add the base and the name together and then use LPCVOID (a pointer to somewhere with no specified type)
         buffer, 
         bufferSize, 
         NULL); // finally able to actually use said playerbase and offsets. Nothing hardcoded
-
+        ac.playername = PlayerNameFromBase;
 };
 
- BOOL PlayerNameWrite(){
-    GetPID();
-
+ struct ACProcess PlayerNameWrite(struct ACProcess ac){
+    SIZE_T bytesRead = 0;
+    char mybuffer[260] = "testing123"; //how to initialize an array
+    BOOL ok = WriteProcessMemory(
+        ac.handle,
+        ac.playername,
+        mybuffer,
+        strlen(mybuffer) + 1,   // +1 for null terminator
+        &bytesRead
+    );
 }
+
+
+
+struct ACProcess PlayerHealth(struct ACProcess ac){
+        DWORD health;
+        DWORD Base = ac.base;
+        BOOL PlayerHealthBOOL = ReadProcessMemory(ac.handle, (LPCVOID)(ac.base+Health), // this is important, first we want to add the base and the name together and then use LPCVOID (a pointer to somewhere with no specified type)
+        &health, 
+        sizeof(health), 
+        NULL); // finally able to actually use said playerbase and offsets. Nothing hardcoded
+        ac.health = health; //i forgogt to ad ther turn statement like a retard. if a value isnt coming back and its being printed i wonder why thats happening lol
+        return ac;  // ← this line
+     
+};
+
 
 
 int main()
@@ -136,6 +162,13 @@ int main()
 
     PlayerNameFunction(ac, mybuffer, sizeof(mybuffer));
     printf("now what were going to do is the module retardation heres the name please work %s \n", mybuffer);
+
+    ac = PlayerHealth(ac);
+    printf("now what were going to do is the module retardation heres the name please work %d \n", ac.health);
+
+    
+    
+
 
     return 0;
     
