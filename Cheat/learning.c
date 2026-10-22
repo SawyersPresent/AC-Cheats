@@ -12,11 +12,13 @@
 #include <stdio.h>
 #include <tlhelp32.h>
 
-#define MY_BUFFER_SIZE 36
+#define MY_BUFFER_SIZE 260
 #define BOT 0x4
 #define Name 0x205
 #define Health 0xEC
 #define PROCESS_NAME "ac_client.exe"
+#define Playerbase 0x18AC00
+#define BotBase 0x18AC04
 
 // define the container ONCE outside everything
 struct ACProcess
@@ -24,9 +26,14 @@ struct ACProcess
     DWORD  pid;
     DWORD base;
     HANDLE handle;
-    DWORD playername;
-    DWORD health;
+    char name[260];    
+    DWORD health;    
 };
+
+struct ACProcess player;
+
+struct ACProcess bot; 
+
 
 
 struct ACProcess GetPID(){
@@ -84,12 +91,11 @@ struct ACProcess GetPID(){
                 }
             };
         }
-
     return result; // 
     
 };
 
-struct ACProcess GetBase(struct ACProcess ac){
+struct ACProcess GetBase(struct ACProcess ac, DWORD offset){
         MODULEENTRY32 me32; // now we do the moduels so we can do deepre module enumeration
         me32.dwSize = sizeof(me32);
 
@@ -105,7 +111,7 @@ struct ACProcess GetBase(struct ACProcess ac){
         // now to read the module base
         DWORD OurPlayerBase = 0;
 
-        ReadProcessMemory(ac.handle, me32.modBaseAddr+0x18AC00, &OurPlayerBase, sizeof(DWORD), NULL); // PlayerBase to be stored in DWORD
+        ReadProcessMemory(ac.handle, (LPCVOID)(me32.modBaseAddr+offset), &OurPlayerBase, sizeof(DWORD), NULL); // PlayerBase to be stored in DWORD
 
         ac.base = OurPlayerBase;
     
@@ -113,41 +119,52 @@ struct ACProcess GetBase(struct ACProcess ac){
 }
 
 
-
-struct ACProcess PlayerNameFunction(struct ACProcess ac, char *buffer, int bufferSize){
-        DWORD Base = ac.base;
+struct ACProcess PlayerNameRead(struct ACProcess ac){
         BOOL PlayerNameFromBase = ReadProcessMemory(ac.handle, (LPCVOID)(ac.base+Name), // this is important, first we want to add the base and the name together and then use LPCVOID (a pointer to somewhere with no specified type)
-        buffer, 
-        bufferSize, 
+        ac.name, 
+        sizeof(ac.name), 
         NULL); // finally able to actually use said playerbase and offsets. Nothing hardcoded
-        ac.playername = PlayerNameFromBase;
+        return ac;
 };
 
  struct ACProcess PlayerNameWrite(struct ACProcess ac){
     SIZE_T bytesRead = 0;
-    char mybuffer[260] = "testing123"; //how to initialize an array
+    char mybuffer[260] = "okayitshallwork123"; //how to initialize an array
     BOOL ok = WriteProcessMemory(
         ac.handle,
-        ac.playername,
+        (LPCVOID)(ULONG_PTR)(ac.base+Name),
         mybuffer,
         strlen(mybuffer) + 1,   // +1 for null terminator
         &bytesRead
     );
+    return ac;
 }
 
 
 
 struct ACProcess PlayerHealth(struct ACProcess ac){
-        DWORD health = 0;
         BOOL PlayerHealthBOOL = ReadProcessMemory(
             ac.handle, 
             (LPCVOID)(ULONG_PTR)(ac.base+Health), // mistake 3 was: (LPCVOID)(ac.base+Health), DWORD to LPCVOID size mismatch, needs ULONG_PTR cast
-            &health, 
-            sizeof(health), 
+            &ac.health, 
+            sizeof(ac.health), 
             NULL);
-        ac.health = health; // mistake 4: this is correct but pointless without return ac — sets the copy then copy disappears
+         // mistake 4: this is correct but pointless without return ac — sets the copy then copy disappears
         return ac; // mistake 4 fix: without this line ac.health is set on the copy and thrown away
 };
+
+struct ACProcess PlayerHealthWrite(struct ACProcess ac){
+    SIZE_T bytesRead = 0;
+    int healthWrite = 777;
+    BOOL ok = WriteProcessMemory(
+        ac.handle,
+        (LPCVOID)(ULONG_PTR)(ac.base+Health), // where to write in AC memory, DWORD→ULONG_PTR→LPCVOID to handle 32→64 bit widening fucked it up
+        &healthWrite, // another mistake forgot to add the pointer to healthwrite
+        sizeof(healthWrite),
+        &bytesRead
+    );
+    return ac;
+}
 
 
 
@@ -155,20 +172,63 @@ int main()
 {
     // erm...
     
-    struct ACProcess ac = GetPID();
-    ac = GetBase(ac);          // this line is missing
-    printf("PID of ac_client %lu \n", ac.pid);
-    char mybuffer[MY_BUFFER_SIZE] = {0}; //how to initialize an array
+    player = GetPID();
 
-    PlayerNameFunction(ac, mybuffer, sizeof(mybuffer)); // char* buffer is a pointer so writes go to original memory directly, no catch needed.
-    printf("now what were going to do is the module retardation heres the name please work %s \n", mybuffer);
+    player = GetBase(player, Playerbase);          // this line is missing
+    printf("PID of ac_client %lu \n", player.pid);
 
-    ac = PlayerHealth(ac); // okay so everytime i NEED TO CALL the function I need to re-assign the object  to make sure the objects are updated 
-    printf("now what were going to do is the module retardation heres the name please work %d \n", ac.health);
+    player = PlayerNameRead(player); // char* buffer is a pointer so writes go to original memory directly, no catch needed.
+    printf("now what were going to do is read the old name %s \n", player.name);
+
+    player = PlayerHealth(player); // okay so everytime i NEED TO CALL the function I need to re-assign the object  to make sure the object members are updated 
+    printf("Now this is the health %d \n", player.health);
     
+    printf("now we need to write the memory \n");
+
+    player = PlayerHealthWrite(player);
+    printf("New health: %d \n", player.health);
     
+    PlayerNameWrite(player);
+    player = PlayerNameRead(player);
+    printf("Now this is the new name %s \n", player.name); //HOLY SHIT IT WORKS PLAYERNAME WRITE ALSO WORKS
+
+    printf("======================================================== \n"); 
+    printf("Now its the bots turn I guess\n");
+    bot.handle = player.handle;
+    bot.pid = player.pid;
+
+    bot = GetBase(bot, BotBase);          // this line is missing
+    printf("PID of ac_client %lu \n", bot.pid);
+    printf("bot array base: 0x%lX\n", bot.base);
+
+    ReadProcessMemory(
+            bot.handle, 
+            (LPCVOID)(ULONG_PTR)(bot.base+BOT), // mistake 3 was: (LPCVOID)(ac.base+Health), DWORD to LPCVOID size mismatch, needs ULONG_PTR cast
+            &bot.base, 
+            sizeof(bot.base), 
+            NULL);
+
+    printf("Possible accurate base finally? %lu \n", bot.base); //HOLY SHIT IT WORKS PLAYERNAME WRITE ALSO WORKS
+
     
+    bot = PlayerNameRead(bot); // char* buffer is a pointer so writes go to original memory directly, no catch needed.
+    printf("now what were going to do is read the old name %s \n", bot.name);
+    printf("GetLastError: %lu\n", GetLastError());
+    printf("botterdress: 0x%lX\n", bot.base);
+
+    bot = PlayerHealth(bot); // okay so everytime i NEED TO CALL the function I need to re-assign the object  to make sure the object members are updated 
+    printf("Now this is the health %d \n", bot.health);
     
+    printf("now we need to write the memory \n");
+
+    bot = PlayerHealthWrite(bot);
+    printf("New health: %d \n", bot.health);
+    
+    PlayerNameWrite(bot);
+    bot = PlayerNameRead(bot);
+    printf("Now this is the new name %s \n", bot.name); //HOLY SHIT IT WORKS PLAYERNAME WRITE ALSO WORKS
+    
+    printf("==================================== \n"); 
 
     return 0;
     
