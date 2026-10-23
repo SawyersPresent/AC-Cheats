@@ -500,3 +500,19 @@ So, just so you know I havent written in C in ages and most of the time I would 
 
 
 
+## Bot writing
+
+For the bot it was frustrating I completely forgot how the code was written given that time has passed, so I ended up going to then read the source code (lie just read the cheat table). What we have had happen was that for the bots theyre all stored in arrays, so this makes things more complicated. 
+
+Step one would be to first reach the base bot array over at `ac_client.exe+18AC04 = bot.base`, with this address the next step would be to add a `0x4` offset to it so we could reach the first bot object!. `bot.base+0x4 = BOT1`
+
+we also know that bots are in an array 
+
+```
+playerent *player1 = newplayerent();          // our client
+vector<playerent *> players;                  // other clients
+```
+
+for now we just want to focus on the double pointer entandra we are dealing with and then we will worry about the other bots
+
+So now from this we know that our player entity is player one while every other player is setup in a vector
