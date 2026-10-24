@@ -513,6 +513,18 @@ playerent *player1 = newplayerent();          // our client
 vector<playerent *> players;                  // other clients
 ```
 
-for now we just want to focus on the double pointer entandra we are dealing with and then we will worry about the other bots
+for now we just want to focus on the double pointer entandra we are dealing with and then we will worry about the other bots.
 
-So now from this we know that our player entity is player one while every other player is setup in a vector
+So now from this we know that our player entity is player one while every other player is setup in a vector so this completely changes how we are going to approach the entire thing, when counting this we have to remember that because of said vector we need to counter 4 Bytes forward after we work our way up to the entity list of the bot. 
+
+Now ill be moving forward as if you found the base address of the bot object, its not so different from finding our player object and our life in this case is made MUCH easier given that we have the source code so lets take another look at it again
+
+```
+playerent *player1 = newplayerent();          // this is at the offset ac_client.exe+18AC00
+vector<playerent *> players;                  // so how do we get here?
+```
+
+Looking at the code, its pretty simple! Since we know that our player object is right before the vector we can just skip that pointer (4 Bytes) to reach the vector itself so this is much easier than doing the entire thing manually from start to finish again.
+
+So now that we have the initial vector pointer what can we do? how do we approach this? well, this is the double pointer entandra issue. We have found the INITIAL pointer to the vector object and from here we need to use ANOTHER pointer to actually get to the first bot object. So what we do know now is that from the player struct is that
+
