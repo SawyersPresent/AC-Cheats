@@ -194,31 +194,31 @@ struct ACProcess BotEnum(struct ACProcess ac){
         printf("bot array base: 0x%lX\n", ac.base);
 
 
-        // ReadProcessMemory(
-        //     bot.handle, 
-        //     (LPCVOID)(ULONG_PTR)(bot.base+BOT), // mistake 3 was: (LPCVOID)(ac.base+Health), DWORD to LPCVOID size mismatch, needs ULONG_PTR cast
-        //     &bot.base, 
-        //     sizeof(bot.base), 
-        //     NULL);
+        ReadProcessMemory(
+            bot.handle, 
+            (LPCVOID)(ULONG_PTR)(bot.base+BOT), // mistake 3 was: (LPCVOID)(ac.base+Health), DWORD to LPCVOID size mismatch, needs ULONG_PTR cast
+            &bot.base, 
+            sizeof(bot.base), 
+            NULL);
     return ac;
 }
 
 
 struct ACProcess BotArray(struct ACProcess ac){
-    BotEnum(bot);
-    ac.botsarray;
+    DWORD BaseIteration = bot.base;
+    bot.botsarray;
     int i = 0;
-    while (i < 1) {
+    while (i < 2) {
         printf("%d\n", i);
         ReadProcessMemory(
             bot.handle, 
-            (LPCVOID)(ULONG_PTR)(bot.base), // mistake 3 was: (LPCVOID)(ac.base+BOT_Name), DWORD to LPCVOID size mismatch, needs ULONG_PTR cast
-            &ac.botsarray[i], 
+            (LPCVOID)(ULONG_PTR)(BaseIteration), 
+            &bot.botsarray[i], 
             sizeof(bot.base), 
             NULL);
         
-        printf("This bot object is over at %lu\n", bot.base);
-        bot.base = bot.base + 0x4;
+        printf("This bot object is over at %lu \n", bot.botsarray[i]);
+        BaseIteration = BaseIteration + 0x4;
         i++;
         
     }
@@ -260,12 +260,12 @@ int main()
     printf("PID of ac_client %lu \n", bot.pid);
     printf("bot array base: 0x%lX\n", bot.base);
 
-    ReadProcessMemory(
-            bot.handle, 
-            (LPCVOID)(ULONG_PTR)(bot.base+BOT), // mistake 3 was: (LPCVOID)(ac.base+Health), DWORD to LPCVOID size mismatch, needs ULONG_PTR cast
-            &bot.base, 
-            sizeof(bot.base), 
-            NULL);
+    // ReadProcessMemory(
+    //         bot.handle, 
+    //         (LPCVOID)(ULONG_PTR)(bot.base+BOT), // mistake 3 was: (LPCVOID)(ac.base+Health), DWORD to LPCVOID size mismatch, needs ULONG_PTR cast
+    //         &bot.base, 
+    //         sizeof(bot.base), 
+    //         NULL);
 
     printf("Possible accurate base finally? %lu \n", bot.base); //HOLY SHIT IT WORKS PLAYERNAME WRITE ALSO WORKS
 
@@ -283,15 +283,12 @@ int main()
     bot = PlayerHealthWrite(bot);
     printf("New health: %d \n", bot.health);
     
-    PlayerNameWrite(bot);
-    bot = PlayerNameRead(bot);
-    printf("Now this is the new name %s \n", bot.name); //HOLY SHIT IT WORKS PLAYERNAME WRITE ALSO WORKS
+ 
     
     printf("==================================== \n"); 
 
     BotArray(bot); //works!
 
-    printf("the first address", bot.botsarray[0]);
 
     return 0;
     
