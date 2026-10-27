@@ -23,11 +23,20 @@
 // define the container ONCE outside everything
 struct ACProcess
 {
-    DWORD  pid;
+    DWORD pid;
     DWORD base;
     HANDLE handle;
     char name[260];    
-    DWORD health;    
+    DWORD health;
+    DWORD botsarray[120];
+};
+
+struct ACBots{
+    DWORD pid;
+    DWORD base;
+    HANDLE handle;
+    DWORD botsarray[120];
+
 };
 
 struct ACProcess player;
@@ -95,6 +104,11 @@ struct ACProcess GetPID(){
     
 };
 
+
+
+
+
+
 struct ACProcess GetBase(struct ACProcess ac, DWORD offset){
         MODULEENTRY32 me32; // now we do the moduels so we can do deepre module enumeration
         me32.dwSize = sizeof(me32);
@@ -116,7 +130,7 @@ struct ACProcess GetBase(struct ACProcess ac, DWORD offset){
         ac.base = OurPlayerBase;
     
     return ac;
-}
+};
 
 
 struct ACProcess PlayerNameRead(struct ACProcess ac){
@@ -126,6 +140,8 @@ struct ACProcess PlayerNameRead(struct ACProcess ac){
         NULL); // finally able to actually use said playerbase and offsets. Nothing hardcoded
         return ac;
 };
+
+
 
  struct ACProcess PlayerNameWrite(struct ACProcess ac){
     SIZE_T bytesRead = 0;
@@ -138,7 +154,7 @@ struct ACProcess PlayerNameRead(struct ACProcess ac){
         &bytesRead
     );
     return ac;
-}
+};
 
 
 
@@ -165,6 +181,49 @@ struct ACProcess PlayerHealthWrite(struct ACProcess ac){
     );
     return ac;
 }
+
+
+
+struct ACProcess BotEnum(struct ACProcess ac){
+        
+        ac.handle = player.handle;
+        ac.pid = player.pid;
+
+        bot = GetBase(bot, BotBase);          // this line is missing
+        printf("PID of ac_client %lu \n", ac.pid);
+        printf("bot array base: 0x%lX\n", ac.base);
+
+
+        // ReadProcessMemory(
+        //     bot.handle, 
+        //     (LPCVOID)(ULONG_PTR)(bot.base+BOT), // mistake 3 was: (LPCVOID)(ac.base+Health), DWORD to LPCVOID size mismatch, needs ULONG_PTR cast
+        //     &bot.base, 
+        //     sizeof(bot.base), 
+        //     NULL);
+    return ac;
+}
+
+
+struct ACProcess BotArray(struct ACProcess ac){
+    BotEnum(bot);
+    ac.botsarray;
+    int i = 0;
+    while (i < 1) {
+        printf("%d\n", i);
+        ReadProcessMemory(
+            bot.handle, 
+            (LPCVOID)(ULONG_PTR)(bot.base), // mistake 3 was: (LPCVOID)(ac.base+BOT_Name), DWORD to LPCVOID size mismatch, needs ULONG_PTR cast
+            &ac.botsarray[i], 
+            sizeof(bot.base), 
+            NULL);
+        
+        printf("This bot object is over at %lu\n", bot.base);
+        bot.base = bot.base + 0x4;
+        i++;
+        
+    }
+    return ac;
+};
 
 
 
@@ -196,7 +255,7 @@ int main()
     printf("Now its the bots turn I guess\n");
     bot.handle = player.handle;
     bot.pid = player.pid;
-
+    
     bot = GetBase(bot, BotBase);          // this line is missing
     printf("PID of ac_client %lu \n", bot.pid);
     printf("bot array base: 0x%lX\n", bot.base);
@@ -229,6 +288,10 @@ int main()
     printf("Now this is the new name %s \n", bot.name); //HOLY SHIT IT WORKS PLAYERNAME WRITE ALSO WORKS
     
     printf("==================================== \n"); 
+
+    BotArray(bot); //works!
+
+    printf("the first address", bot.botsarray[0]);
 
     return 0;
     
